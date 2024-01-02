@@ -145,6 +145,8 @@ def energy_3(_v, _t=1):
     """
     An arbitrary vertical transition model for UAV mobility energy consumption (segmented 2D + 'vertical transitions')
 
+    <A simplified vertical transitions model with a fixed lift velocity for computational ease in trajectory design...>
+
     H. Yan, Y. Chen and S. H. Yang, "New Energy Consumption Model for Rotary-Wing UAV Propulsion,"
     IEEE Wireless Communications Letters, vol. 10, no. 9, pp. 2009-2012, Sept. 2021.
     """
@@ -251,6 +253,8 @@ def lcso_eval_obj(_traj_wps, _traj_vels, _eval_assign, _eval_obj):
     _traj_time = tf.reduce_sum(_traj_times).numpy()
 
     # TO-DO: Using mean(_traj_vels) & _traj_time for vert might need another look...
+    # NOTE: Although the modeling allows arbitrary vertical transitions between highly-interpolated horizontal
+    #       segments, for computational ease, we use a single transition at the end with mean(_traj_vels) & _traj_time.
     _traj_nrg = lcso_eval_obj_(_traj_vels, _traj_accs, tf.mean(_traj_vels), _traj_time)
 
     if _eval_assign and _eval_obj is not None:
@@ -637,6 +641,16 @@ for c_uav in c_uavs:
         nrg_costs[c_id][c_id_] = int(nrg_cost) + c_uav_['serv_nrg']
         time_costs[c_id][c_id_] = int(time_cost) + c_uav_['serv_time']
 
+
+'''
+COLLISION AVOIDANCE:
+
+In ACCUSTOM, enforcing collision avoidance in an offline centralized setting is nearly impossible due to the 
+scheduling/association that is to-be-determined by mTSP. So, we assume that the UAVs are equipped with LIDARs and 
+other sensing mechanisms (along with UAV-UAV control communication) to avoid collisions with each other (and obstacles).
+
+So, if a UAV nears a collision during its LCSO optimal trajectory, it moves to the nearest 'collision-free' voxel.
+'''
 
 # OR-Tools mTSP solution
 cumul_nrgs, cumul_times, cumul_rewards = mtsp_solve(nrg_costs, time_costs, c_uavs, mtsp_cost_model)

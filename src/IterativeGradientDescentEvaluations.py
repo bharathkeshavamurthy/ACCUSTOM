@@ -117,6 +117,8 @@ def energy_3(_v, _t=1):
     """
     An arbitrary vertical transition model for UAV mobility energy consumption (segmented 2D + 'vertical transitions')
 
+    <A simplified vertical transitions model with a fixed lift velocity for computational ease in trajectory design...>
+
     H. Yan, Y. Chen and S. H. Yang, "New Energy Consumption Model for Rotary-Wing UAV Propulsion,"
     IEEE Wireless Communications Letters, vol. 10, no. 9, pp. 2009-2012, Sept. 2021.
     """
@@ -337,6 +339,17 @@ for uav in uavs:
                                                           np.random.normal(g_mu, g_sigma))) for _ in range(n_a_g)]
 
     uav['channel'] = np.array(h_matrix, dtype=np.complex128)
+
+'''
+COLLISION AVOIDANCE:
+
+In ACCUSTOM, enforcing collision avoidance in an offline centralized setting is nearly impossible due to the 
+scheduling/association that is to-be-determined by mTSP. So, we assume that the UAVs are equipped with LIDARs and 
+other sensing mechanisms (along with UAV-UAV control communication) to avoid collisions with each other (and obstacles).
+
+So, here in the IGD framework, to maintain consistency across comparisons, if a UAV nears a collision 
+during its 'as-the-crow-flies' movement, it moves to the nearest 'collision-free' voxel.
+'''
 
 ''' Service & Reward Computation '''
 
