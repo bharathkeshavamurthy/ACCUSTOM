@@ -8,8 +8,9 @@ DEPLOYMENT MECHANISM:
     c. Vertical transitions (ground-level to fixed-height to ground-level) at constant (max) vertical velocity.
 
 REPORTED METRICS:
-    a. Total cumulative fleet-wide reward (vs configurable Number of UAVs);
-    b. Total cumulative fleet-wide reward and (vs) Average per-UAV energy consumption.
+    a. Total Cumulative Fleet-wide Reward (vs configurable Number of UAVs);
+    b. Total Cumulative Fleet-wide Reward (vs configurable Number of Users/GNs);
+    c. Total Cumulative Fleet-wide Reward and (vs) Average Per-UAV Energy Consumption.
 
 Author: Bharath Keshavamurthy <bkeshav1@asu.edu>
 Organization: School of Electrical, Computer and Energy Engineering, Arizona State University, Tempe, AZ.

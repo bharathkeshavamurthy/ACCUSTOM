@@ -4,7 +4,7 @@ application. The IGD algorithm determines the optimal receive antenna positions 
 each Ground Node (GN) in a UAV's designated cluster; then, a 3D (Euclidean) distance minimization heuristic determines
 the cluster-wide optimal serving position of the UAV. This mechanism is adapted from the implementation in Hanna et al.
 
-Reference Paper:
+REFERENCE PAPER:
     S. Hanna, H. Yan and D. Cabric,
     "Distributed UAV Placement Optimization for Cooperative Line-of-sight MIMO Communications,"
     ICASSP 2019 - 2019 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP).
@@ -15,8 +15,9 @@ DEPLOYMENT MECHANISM:
     c. Vertical transitions (ground-level to fixed-height to ground-level) at constant (max) vertical velocity;
 
 REPORTED METRICS:
-    a. Total cumulative fleet-wide reward (vs configurable Number of UAVs);
-    b. Total cumulative fleet-wide reward and (vs) Average per-UAV energy consumption.
+    a. Total Cumulative Fleet-wide Reward (vs configurable Number of UAVs);
+    b. Total Cumulative Fleet-wide Reward (vs configurable Number of Users/GNs);
+    c. Total Cumulative Fleet-wide Reward and (vs) Average Per-UAV Energy Consumption.
 
 Author: Bharath Keshavamurthy <bkeshav1@asu.edu>
 Organization: School of Electrical, Computer and Energy Engineering, Arizona State University, Tempe, AZ.

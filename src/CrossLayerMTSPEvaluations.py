@@ -2,7 +2,7 @@
 This script encapsulates the operations involved in evaluating the performance of our proposed cross-layer optimization
 solution (ZF + mTSP + LCSO) for harvesting prioritized traffic from MIMO-capable Ground Nodes (GNs) via MIMO UAVs.
 
-References:
+REFERENCES:
     1. Y. Zeng, J. Xu and R. Zhang, "Energy Minimization for Wireless Communication With Rotary-Wing UAV,"
        IEEE Transactions on Wireless Communications, vol. 18, no. 4, pp. 2329-2345, April 2019.
     2. H. Yan, Y. Chen and S. H. Yang, "New Energy Consumption Model for Rotary-Wing UAV Propulsion,"
@@ -23,8 +23,9 @@ DEPLOYMENT MECHANISM:
     f. A Multiple Traveling Salesman Problem (mTSP) setup to graphically obtain the GN association/scheduling mechanism.
 
 REPORTED METRICS:
-    a. Total cumulative fleet-wide reward (vs configurable Number of UAVs);
-    b. Total cumulative fleet-wide reward and (vs) Average per-UAV energy consumption.
+    a. Total Cumulative Fleet-wide Reward (vs configurable Number of UAVs);
+    b. Total Cumulative Fleet-wide Reward (vs configurable Number of Users/GNs);
+    c. Total Cumulative Fleet-wide Reward and (vs) Average Per-UAV Energy Consumption.
 
 Author: Bharath Keshavamurthy <bkeshav1@asu.edu>
 Organization: School of Electrical, Computer and Energy Engineering, Arizona State University, Tempe, AZ.
