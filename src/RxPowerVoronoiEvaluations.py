@@ -55,7 +55,7 @@ watts_db, watts_dbm = lambda _x: 10 * np.log10(_x), lambda _x: 10 * np.log10(_x)
 # TO-DO Configuration | Core analysis variables: Number of UAVs and Number of GNs
 temp, k_1, k_2, z_1, z_2, alpha, alpha_, kappa, bw = 300, 1, np.log(100) / 90, 9.61, 0.16, 2, 2.8, 0.2, 5e6
 g, wgt_uav, tx_p, beta_0, w_var = constants.g, 80, dbm_watts(23), db_watts(20), constants.Boltzmann * temp * bw
-pi, eps, t_max, x_max, y_max, z_max, x_d, y_d, z_d, h_g, h_u = np.pi, 1e-6, 3000, 5000, 5000, 200, 5, 5, 5, None, None
+pi, eps, t_max, x_max, y_max, z_max, x_d, y_d, z_d, h_g, h_u = np.pi, 1e-3, 3000, 5000, 5000, 200, 5, 5, 5, None, None
 r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0302, 8, 0.0157, 5730
 n_u, n_g, n_c, n_a_u, n_a_g, v_min, v_stp, v_max, v_p_min, v_h_max, v_v_max = 6, 36, 6, 16, 4, 0, 0.1, 55, 20.1, 55, 55
 # r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0151, 4, 0.0157, 2865
@@ -231,7 +231,7 @@ assert int(energy_2([v_min], [0])) == 1985 and int(energy_2([v_p_min], [0])) == 
 assert int(energy_3([v_min], [0])) == 1985 and int(energy_3([v_p_min], [0])) == 1586, 'Error in energy_3 computation!'
 
 # Deployment model parameters
-print('[INFO] RxPowerVoronoiEvaluations core_operations: Deployment model parameters in this simulation - '
+print('[INFO] RxPowerVoronoiEvaluations core_operations: Deployment model parameters in this simulation are - '
       f'Max simulation time = [{t_max}] s, Max site length = [{x_max}] m, Max site breadth = [{y_max}] m, '
       f'Max site height = [{z_max}] m, Voxel length = [{x_d}] m, Voxel breadth = [{y_d}] m, '
       f'Voxel height = [{z_d}] m, UAV height = [{h_u}] m, GN height = [{h_g}] m, '
@@ -240,13 +240,13 @@ print('[INFO] RxPowerVoronoiEvaluations core_operations: Deployment model parame
       f'Number of clusters = [{n_c}].')
 
 # Channel model parameters
-print('[INFO] RxPowerVoronoiEvaluations core_operations: Rotary-wing UAV mobility model simulation parameters - '
+print('[INFO] RxPowerVoronoiEvaluations core_operations: Rotary-wing UAV mobility model simulation parameters are - '
       f'Rx chain temperature = [{temp}] K, k1 = [{k_1}], k2 = [{k_2}], z1 = [{z_1}], z2 = [{z_2}], '
       f'NLoS attenuation factor = [{kappa}], GN-UAV channel bandwidth = [{bw}] Hz, '
       f'LoS pathloss exponent = [{alpha}], NLoS pathloss exponent = [{alpha_}].')
 
 # Mobility model parameters
-print('[INFO] RxPowerVoronoiEvaluations core_operations: Rotary-wing UAV mobility model simulation parameters - '
+print('[INFO] RxPowerVoronoiEvaluations core_operations: Rotary-wing UAV mobility model simulation parameters are - '
       f'Thrust-to-Weight ratio = [{r_tw}], Profile drag coefficient = [{delta}], Air density = [{rho}] kg/m^3,'
       f'UAV weight = [{wgt_uav}] N, Max horz. vel. = [{v_h_max}] m/s, Max vert. vel. = [{v_v_max}] m/s, '
       f'Rotor radius = [{rtr_rad}] m, Incremental correction factor to induced power = [{inc_corr}],'
@@ -323,7 +323,12 @@ while sum([abs(curr_objs[_gn] - prev_objs[_gn]) > eps for _gn in range(n_g)]) < 
             serv_voxel = [_ for _ in np.mean(np.array([[_g_u['voxel']['x'], _g_u['voxel']['y'],
                                                         _g_u['voxel']['z']] for _g_u in uav['gns']]), axis=0)]
 
-            uav['serv_voxel'] = {'x': serv_voxel[0], 'y': serv_voxel[1], 'z': serv_voxel[2]}
+            uav['serv_voxel'] = {'x': serv_voxel[0], 'y': serv_voxel[1], 'z': h_u}
+            # uav['serv_voxel'] = {'x': serv_voxel[0], 'y': serv_voxel[1], 'z': serv_voxel[2]}
+
+for uav in uavs:  # Update 'serv_voxel' ids to maintain DTO consistency...
+    voxel_x, voxel_y, voxel_z = uav['serv_voxel']['x'], uav['serv_voxel']['y'], uav['serv_voxel']['z']
+    uav['serv_voxel']['id'] = int((voxel_x / x_d) - 0.5) + int((voxel_y / y_d) - 0.5) + int((voxel_z / z_d) - 0.5)
 
 ''' MU-MIMO Channel Generation '''
 

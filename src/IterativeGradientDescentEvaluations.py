@@ -29,10 +29,10 @@ import warnings
 # Ignore DeprecationWarnings
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 
-# import plotly
+import plotly
 import numpy as np
 from scipy import constants
-# import plotly.graph_objs as go
+import plotly.graph_objs as go
 
 """
 SCRIPT SETUP
@@ -42,7 +42,7 @@ SCRIPT SETUP
 np.random.seed(1337)
 
 # Plotly API access credentials
-# plotly.tools.set_credentials_file(username='<insert_your_username_here>', api_key='<insert_your_api_key_here>')
+plotly.tools.set_credentials_file(username='total.academe', api_key='XQAdsDUeESbbgI0Pyw3E')
 
 """
 CONFIGURATIONS
@@ -55,11 +55,12 @@ watts_db, watts_dbm = lambda _x: 10 * np.log10(_x), lambda _x: 10 * np.log10(_x)
 # Simulation setup (MKS/SI units)
 # TO-DO Configuration | Core analysis variables: Number of UAVs and Number of GNs
 pi, ld, it_max, a_gd, b_gd, df_gd = np.pi, constants.speed_of_light / 1e9, 100, 0.99, 0.05, 0.99
-t_max, x_max, y_max, z_max, x_d, y_d, z_d, h_g, h_u = 3000, 5000, 5000, 200, 5, 5, 5, None, None
+g, n_u, n_g, n_c, n_a_u, n_a_g, wgt_uav, v_h_max, v_v_max = constants.g, 6, 36, 6, 16, 4, 80, 55, 55
 temp, k_1, k_2, z_1, z_2, alpha, alpha_, kappa, bw = 300, 1, np.log(100) / 90, 9.61, 0.16, 2, 2.8, 0.2, 5e6
-g, n_u, n_g, n_c, n_a_u, n_a_g, m_u, v_min, v_p_min, v_h_max, v_v_max = 9.8, 6, 36, 6, 16, 4, 3, 0, 22, 55, 55
-tx_p, beta_0, w_var = dbm_watts(23), db_watts(20), constants.Boltzmann * temp * bw  # 23dBm, 20dB, Thermal noise
-ld_omega, v_0, u_tip, p_0, p_1, p_2 = 1, 7.2, 200, 580.65, 790.6715, 0.0073  # p_2 = (d_0 * rho * eps * zeta) / 2
+t_max, x_max, y_max, z_max, x_d, y_d, z_d, h_g, h_u, v_stp = 3000, 5000, 5000, 200, 5, 5, 5, None, None, 0.1
+r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0302, 8, 0.0157, 5730
+v_min, v_max, v_p_min, tx_p, beta_0, w_var = 0, 55, 20.1, dbm_watts(23), db_watts(20), constants.Boltzmann * temp * bw
+# r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0151, 4, 0.0157, 2865
 
 # Quality-of-Service table for GN traffic upload requests
 traffic = {'file': {'n': 12, 'priority': 24, 'latency': 19 * 60, 'size': 536e6, 'discount_factor': 0.8},
@@ -86,45 +87,93 @@ def energy_1(_v, _t=1):
     Y. Zeng, J. Xu and R. Zhang, "Energy Minimization for Wireless Communication With Rotary-Wing UAV,"
     IEEE Transactions on Wireless Communications, vol. 18, no. 4, pp. 2329-2345, April 2019.
     """
-    return ((p_0 * (1 + ((3 * (_v ** 2)) / (u_tip ** 2)))) + (p_2 * (_v ** 3)) +
-            (p_1 * ld_omega * ((((ld_omega ** 2) + ((_v ** 4) / (4 * (v_0 ** 4)))
-                                 ) ** 0.5) - ((_v ** 2) / (2 * (v_0 ** 2)))) ** 0.5)) * _t
+    # Primary constants for a rotary-wing UAV
+    _dsc_area, _f_sl, _ang_vel = pi * (rtr_rad ** 2), (n_bld * bld_len) / (pi * rtr_rad), rpm * ((2 * pi) / 60)
+
+    # Secondary constants for a rotary-wing UAV
+    _u_tip, _v_0 = _ang_vel * rtr_rad, (wgt_uav / (2 * rho * _dsc_area)) ** 0.5
+    _r_fdr = fp_area / (_f_sl * _dsc_area)
+
+    # Tertiary constants for evaluating energy consumption...
+    _p_0, _kappa = (delta / 8) * rho * _f_sl * _dsc_area * (_ang_vel ** 3) * (rtr_rad ** 3), r_tw
+    _p_1 = (1 + inc_corr) * ((wgt_uav ** 1.5) / ((2 * rho * _dsc_area) ** 0.5))
+    _p_2 = 0.5 * _r_fdr * rho * _f_sl * _dsc_area
+
+    return ((_p_0 * (1 + ((3 * (_v ** 2)) / (_u_tip ** 2)))) +
+            (_p_1 * _kappa * ((((_kappa ** 2) + ((_v ** 4) / (4 * (_v_0 ** 4)))) ** 0.5) -
+                              ((_v ** 2) / (2 * (_v_0 ** 2)))) ** 0.5) + (_p_2 * (_v ** 3))) * _t
 
 
 def energy_2(_vs, _as):
     """
-    An arbitrary 2D horizontal velocity model for UAV mobility energy consumption
+    An arbitrary horizontal velocity model for UAV mobility energy consumption (segmented [horz. + vert.] components)
 
     H. Yan, Y. Chen and S. H. Yang, "New Energy Consumption Model for Rotary-Wing UAV Propulsion,"
     IEEE Wireless Communications Letters, vol. 10, no. 9, pp. 2009-2012, Sept. 2021.
     """
-    _ke_d = 0.5 * m_u * ((_vs[-1] - _vs[0]) ** 2)
-    _a_cf = lambda _v, _a: ((_a ** 2) - (((_a * _v) ** 2) / (_v ** 2))) ** 0.5
-    _c_1, _c_2, _c_3, _c_4, _c_5 = p_0, 3 / (u_tip ** 2), p_1 * ld_omega, 2 * (v_0 ** 2), p_2
+    # Primary constants for a rotary-wing UAV
+    _dsc_area, _f_sl = pi * (rtr_rad ** 2), (n_bld * bld_len) / (pi * rtr_rad)
+    _mass_uav, _ang_vel = wgt_uav / g, rpm * ((2 * pi) / 60)
 
-    _term_1 = sum([_c_5 * (__v ** 3) for __v in _vs])
-    _term_2 = sum([_c_1 * (1 + (_c_2 * (__v ** 2))) for __v in _vs])
+    # Secondary constants for a rotary-wing UAV
+    _u_tip, _v_0 = _ang_vel * rtr_rad, (wgt_uav / (2 * rho * _dsc_area)) ** 0.5
+    _r_fdr = fp_area / (_f_sl * _dsc_area)
 
-    _term_3 = sum([_c_3 * ((1 + ((_a_cf(_vs[_i], _as[_i]) ** 2) / (g ** 2))) ** 0.5) *
-                   ((((1 + ((_a_cf(_vs[_i], _as[_i]) ** 2) / (g ** 2)) +
-                       ((_vs[_i] ** 4) / (_c_4 ** 2))) ** 0.5) -
-                     ((_vs[_i] ** 2) / _c_4)) ** 0.5)
-                   for _i in range(len(_vs))])
+    # Tertiary constants for evaluating energy consumption...
+    _p_0, _kappa = (delta / 8) * rho * _f_sl * _dsc_area * (_ang_vel ** 3) * (rtr_rad ** 3), r_tw
+    _p_1 = (1 + inc_corr) * ((wgt_uav ** 1.5) / ((2 * rho * _dsc_area) ** 0.5))
+    _p_2 = 0.5 * _r_fdr * rho * _f_sl * _dsc_area
 
-    return _term_1 + _term_2 + _term_3 + _ke_d
+    # Core constants in the energy equation...
+    _ke_d = 0.5 * _mass_uav * ((_vs[-1] - _vs[0]) ** 2)
+    _a_cf = lambda _v, _a: ((_a ** 2) - (((_a * _v) ** 2) / (_v ** 2))) ** 0.5 if _v != 0 else 0
+    _c_0, _c_1, _c_2, _c_3, _c_4 = _p_0, 3 / (_u_tip ** 2), _p_1 * _kappa, 2 * (_v_0 ** 2), _p_2
+
+    ''' Split individual terms from the energy equation '''
+
+    _term_0 = sum([_c_0 * (1 + (_c_1 * (__v ** 2))) for __v in _vs])
+    _term_1 = sum([_c_4 * (__v ** 3) for __v in _vs])
+
+    _term_2 = sum([_c_2 * (
+            (1 + ((_a_cf(_vs[_i], _as[_i]) ** 2) / (g ** 2))) ** 0.5) * (
+                           (((1 + ((_a_cf(_vs[_i], _as[_i]) ** 2) / (g ** 2)) + ((_vs[_i] ** 4) / (
+                                   _c_3 ** 2))) ** 0.5) - ((_vs[_i] ** 2) / _c_3)) ** 0.5) for _i in range(len(_vs))])
+
+    return _term_0 + _term_1 + _term_2 + _ke_d
 
 
-def energy_3(_v, _t=1):
+def energy_3(_vs, _as):
     """
-    An arbitrary vertical transition model for UAV mobility energy consumption (segmented 2D + 'vertical transitions')
-
-    <A simplified vertical transitions model with a fixed lift velocity for computational ease in trajectory design...>
+    An arbitrary vertical velocity model for UAV mobility energy consumption (segmented [horz. + vert.] components)
 
     H. Yan, Y. Chen and S. H. Yang, "New Energy Consumption Model for Rotary-Wing UAV Propulsion,"
     IEEE Wireless Communications Letters, vol. 10, no. 9, pp. 2009-2012, Sept. 2021.
     """
-    return ((p_0 * (1 + ((3 * (_v ** 2)) / (u_tip ** 2)))) +
-            (p_1 * ((((1 + ((_v ** 4) / (4 * (v_0 ** 4)))) ** 0.5) - ((_v ** 2) / (2 * (v_0 ** 2)))) ** 0.5))) * _t
+    # Primary constants for a rotary-wing UAV
+    _dsc_area, _f_sl, _ang_vel = pi * (rtr_rad ** 2), (n_bld * bld_len) / (pi * rtr_rad), rpm * ((2 * pi) / 60)
+
+    # Secondary constants for a rotary-wing UAV
+    _u_tip, _v_0 = _ang_vel * rtr_rad, (wgt_uav / (2 * rho * _dsc_area)) ** 0.5
+    _r_fdr = fp_area / (_f_sl * _dsc_area)
+
+    # Tertiary constants for evaluating energy consumption...
+    _p_0 = (delta / 8) * rho * _f_sl * _dsc_area * (_ang_vel ** 3) * (rtr_rad ** 3)
+    _p_1 = (1 + inc_corr) * ((wgt_uav ** 1.5) / ((2 * rho * _dsc_area) ** 0.5))
+    _p_2 = 0.5 * _r_fdr * rho * _f_sl * _dsc_area
+
+    ''' Core constants in the energy equation '''
+
+    _kappa = lambda _v, _a: (1 + ((((rho * _r_fdr * _f_sl * _dsc_area * (_v ** 2)) +
+                                    (2 * wgt_uav * _a)) ** 2) / (4 * (wgt_uav ** 2)))) ** 0.5
+
+    _c_0, _c_1, __c_2, _c_3 = _p_0, 3 / (_u_tip ** 2), _p_1, 2 * (_v_0 ** 2)
+
+    # Split individual terms from the energy equation
+    _term_0 = sum([_c_0 * (1 + (_c_1 * (__v ** 2))) for __v in _vs])
+    _term_1 = sum([__c_2 * _kappa(_vs[__i], _as[__i]) * (((((_kappa(_vs[__i], _as[__i]) ** 2) + (
+            (_vs[__i] ** 4) / (_c_3 ** 2))) ** 0.5) - ((_vs[__i] ** 2) / _c_3)) ** 0.5) for __i in range(len(_vs))])
+
+    return _term_0 + _term_1
 
 
 def igd_channel(_p_m, _uav):
@@ -179,11 +228,47 @@ h_u = z_max - (z_d / 2) if h_u is None else h_u
 
 # Assertions for model validations...
 assert x_max % x_d == 0 and y_max % y_d == 0 and z_max % z_d == 0, 'Potential error in given grid tessellation!'
-assert int(energy_1(v_min)) == 1371 and int(energy_1(v_p_min)) == 937, 'Potential error in energy_1 computation!'
 assert h_u != 0 and h_g != 0 and 0 < h_u < z_max and 0 < h_g < z_max, 'Unsupported or Impractical height values!'
 assert sum([_f['n'] for _f in traffic.values()]) == n_g, 'Traffic QoS does not match the script simulation setup!'
+assert int(energy_1(v_min)) == 1985 and int(energy_1(v_p_min)) == 1734, 'Potential error in energy_1 computation!'
+assert n_c == n_u, 'The number of UAVs should be equal to the number of GN clusters for this static UAV deployment!'
 assert h_u % (z_d / 2) == 0 and h_g % (z_d / 2) == 0, 'Height values do not adhere to the current grid tessellation!'
-assert n_c == n_u, 'The number of UAVs should be equal to the number of GN clusters for this IGD static UAV deployment!'
+assert int(energy_2([v_min], [0])) == 1985 and int(energy_2([v_p_min], [0])) == 1734, 'Error in energy_2 computation!'
+assert int(energy_3([v_min], [0])) == 1985 and int(energy_3([v_p_min], [0])) == 1586, 'Error in energy_3 computation!'
+
+# Deployment model parameters
+print('[INFO] IGDEvaluations core_operations: Deployment model parameters in this simulation are as follows - '
+      f'Max simulation time = [{t_max}] s, Max site length = [{x_max}] m, Max site breadth = [{y_max}] m, '
+      f'Max site height = [{z_max}] m, Voxel length = [{x_d}] m, Voxel breadth = [{y_d}] m, '
+      f'Voxel height = [{z_d}] m, Std. UAV height = [{h_u}] m, GN height = [{h_g}] m, '
+      f'Number of UAV antennas = [{n_a_u}], Number of GN antennas = [{n_a_g}], '
+      f'Number of UAVs = [{n_u}], Number of GNs = [{n_g}], and '
+      f'Number of clusters = [{n_c}].')
+
+# Channel model parameters
+print('[INFO] IGDEvaluations core_operations: Rotary-wing UAV mobility model simulation parameters are as follows - '
+      f'Rx chain temperature = [{temp}] K, k1 = [{k_1}], k2 = [{k_2}], z1 = [{z_1}], z2 = [{z_2}], '
+      f'NLoS attenuation factor = [{kappa}], GN-UAV channel bandwidth = [{bw}] Hz, '
+      f'LoS pathloss exponent = [{alpha}], NLoS pathloss exponent = [{alpha_}].')
+
+# Mobility model parameters
+print('[INFO] IGDEvaluations core_operations: Rotary-wing UAV mobility model simulation parameters are as follows - '
+      f'Thrust-to-Weight ratio = [{r_tw}], Profile drag coefficient = [{delta}], Air density = [{rho}] kg/m^3,'
+      f'UAV weight = [{wgt_uav}] N, Max horz. vel. = [{v_h_max}] m/s, Max vert. vel. = [{v_v_max}] m/s, '
+      f'Rotor radius = [{rtr_rad}] m, Incremental correction factor to induced power = [{inc_corr}],'
+      f'Fuselage flat plate area = [{fp_area}] m^2, Number of blades = [{n_bld}], '
+      f'Blade length = [{bld_len}] m, and Blade RPM = [{rpm}] rpm.')
+
+''' Mobility Model Evaluations '''
+
+e_vels = np.arange(start=v_min, stop=v_max + v_stp, step=v_stp)
+e_trace = go.Scatter(x=e_vels, y=[energy_1(_e_vel) for _e_vel in e_vels], mode='lines+markers')
+
+e_layout = dict(title='Rotary-Wing UAV 2D Mobility Power Analysis (fixed horz. vel.)',
+                xaxis=dict(title='Horizontal Flying Velocity in m/s (v)', autorange=True),
+                yaxis=dict(title='UAV Power Consumption in W (P)', type='log', autorange=True))
+
+plotly.plotly.plot(dict(data=[e_trace], layout=e_layout))
 
 ''' Grid Tessellation '''
 
