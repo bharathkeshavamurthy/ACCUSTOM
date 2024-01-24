@@ -297,10 +297,10 @@ uavs = [{'id': _u, 'cumul_reward': 0, 'serv_voxels': [], 'bb_voxels': [],
 obj_fn = lambda __x, __w, __gn, __uav: sum([abs((np.sqrt(tx_p) * (voronoi_channel(__gn, __uav)[__a_u, :] @
                                                                   __x)) + __w[__a_u]) for __a_u in range(n_a_u)])
 
-prev_objs, curr_objs = {_g['id']: np.inf for _g in gns}, {_g['id']: np.inf for _g in gns}
+prev_objs, curr_objs = {_g['id']: np.random.random() for _g in gns}, {_g['id']: np.random.random() for _g in gns}
 ref_sig_vec = np.random.multivariate_normal(np.zeros(2), 0.5 * np.eye(2), size=n_a_g).view(np.complex128).flatten()
 
-while sum([abs(curr_objs[_gn] - prev_objs[_gn]) > eps for _gn in range(n_g)]) < n_g:
+while sum([abs(curr_objs[_gn] - prev_objs[_gn]) <= eps for _gn in range(n_g)]) < n_g:
     gns_vor = [_ for _ in gns]
     w_vecs = {_u['id']: np.random.multivariate_normal(np.zeros(2), 0.5 * w_var * np.eye(2),
                                                       size=n_a_u).view(np.complex128).flatten() for _u in uavs}

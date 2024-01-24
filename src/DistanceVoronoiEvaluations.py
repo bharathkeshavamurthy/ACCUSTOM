@@ -273,9 +273,9 @@ uavs = [{'id': _u, 'cumul_reward': 0, 'serv_voxels': [], 'bb_voxels': [],
          'gns': [], 'start_voxel': voxels[0], 'end_voxel': voxels[0]} for _u in range(n_u)]
 
 obj_fn = lambda __gn, __uav: distance_3d(__gn['voxel'], __uav['serv_voxel'])
-prev_objs, curr_objs = {_g['id']: np.inf for _g in gns}, {_g['id']: np.inf for _g in gns}
+prev_objs, curr_objs = {_g['id']: np.random.random() for _g in gns}, {_g['id']: np.random.random() for _g in gns}
 
-while sum([abs(curr_objs[_gn] - prev_objs[_gn]) > eps for _gn in range(n_g)]) < n_g:
+while sum([abs(curr_objs[_gn] - prev_objs[_gn]) <= eps for _gn in range(n_g)]) < n_g:
     gns_vor = [_ for _ in gns]
 
     for uav in uavs:
