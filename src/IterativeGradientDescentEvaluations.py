@@ -139,7 +139,6 @@ def igd_channel(_p_m, _uav):
 
     for _a_u, _q_n in enumerate(_uav['serv_voxels']):
         for _a_g in range(n_a_g):
-
             _p_m_err = np.add(np.array([_p_m['x'], _p_m['y'], _p_m['z']]),
                               np.random.normal(0, max([x_d, y_d, z_d]), size=3))
 
@@ -158,12 +157,11 @@ def comm_link(_gn, _uav):
     """
     Render the GN-UAV link in the MU-MIMO paradigm (with ZF receive beam-forming and receiver thermal noise)
     """
-    _h_matrix = _uav['channel']
-    _payload_size = _gn['traffic']['size']
-    _w_vector = np.random.multivariate_normal(np.zeros(2), 0.5 * np.eye(2), size=n_a_u).view(np.complex128)
+    _h_matrix, _payload_size = _uav['channel'], _gn['traffic']['size']
+    _w_vector = np.random.multivariate_normal(np.zeros(2), 0.5 * w_var * np.eye(2), size=n_a_u).view(np.complex128)
 
     # noinspection PyUnresolvedReferences
-    _w_hat_vector = np.linalg.pinv(_h_matrix.conj().T @ h_matrix) @ h_matrix.conj().T @ _w_vector
+    _w_hat_vector = np.linalg.pinv(_h_matrix.conj().T @ _h_matrix) @ _h_matrix.conj().T @ _w_vector
 
     return _payload_size / (bw * np.log2(1 + (tx_p / ((np.linalg.norm(_w_hat_vector) ** 2) / _w_hat_vector.shape[0]))))
 

@@ -185,12 +185,11 @@ def comm_link(_gn, _c_uav):
     """
     Render the GN-UAV link in the MU-MIMO paradigm (with ZF receive beam-forming and receiver thermal noise)
     """
-    _h_matrix = cl_mtsp_channel(_c_uav)
-    _payload_size = _gn['traffic']['size']
-    _w_vector = np.random.multivariate_normal(np.zeros(2), 0.5 * np.eye(2), size=n_a_u).view(np.complex128)
+    _h_matrix, _payload_size = cl_mtsp_channel(_c_uav), _gn['traffic']['size']
+    _w_vector = np.random.multivariate_normal(np.zeros(2), 0.5 * w_var * np.eye(2), size=n_a_u).view(np.complex128)
 
     # noinspection PyUnresolvedReferences
-    _w_hat_vector = np.linalg.pinv(_h_matrix.conj().T @ h_matrix) @ h_matrix.conj().T @ _w_vector
+    _w_hat_vector = np.linalg.pinv(_h_matrix.conj().T @ _h_matrix) @ _h_matrix.conj().T @ _w_vector
 
     return _payload_size / (bw * np.log2(1 + (tx_p / ((np.linalg.norm(_w_hat_vector) ** 2) / _w_hat_vector.shape[0]))))
 
@@ -334,7 +333,7 @@ def lcso_execute(_traj_wps, _wp_vels, _traj_vels, _vel_vels):
     _start_idx, _end_idx = 0, n_sw_div[0]
 
     _win_idxs = tf.Variable(tf.zeros(shape=[ss_cnt, int(n_ss / 3)]))  # Winner indices
-    _evals = tf.Variable(np.inf * tf.ones(shape=[n_sw,]))  # Force an inf upper bound for min evals later...
+    _evals = tf.Variable(np.inf * tf.ones(shape=[n_sw, ]))  # Force an inf upper bound for min evals later...
 
     for _eval_cnt in range(eval_cnt_max):
         with ThreadPoolExecutor(max_workers=n_w) as _exec:
@@ -641,7 +640,6 @@ for c_uav in c_uavs:
 
         nrg_costs[c_id][c_id_] = int(nrg_cost) + c_uav_['serv_nrg']
         time_costs[c_id][c_id_] = int(time_cost) + c_uav_['serv_time']
-
 
 '''
 COLLISION AVOIDANCE:
