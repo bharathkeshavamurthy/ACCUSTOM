@@ -58,7 +58,7 @@ ex_vec, ey_vec, ez_vec = np.array([1, 0, 0]), np.array([0, 1, 0]), np.array([0, 
 pi, ld, it_max, a_bf, b_bf, df_bf = np.pi, constants.speed_of_light / 1e9, 100, 0.99, 0.3, 0.99
 t_max, x_max, y_max, z_max, x_d, y_d, z_d, h_g, h_u = 3000, 5000, 5000, 200, 5, 5, 5, None, None
 temp, k_1, k_2, z_1, z_2, alpha, alpha_, kappa, bw = 300, 1, np.log(100) / 90, 9.61, 0.16, 2, 2.8, 0.2, 5e6
-g, n_u, n_g, n_c, n_a_u, n_a_g, wgt_uav, v_max, v_h_max, v_v_max = constants.g, 6, 36, 6, 16, 4, 80, 55, 55, 55
+g, n_u, n_g, n_c, n_a_u, n_a_g, wgt_uav, v_max, v_h_max, v_v_max = constants.g, 6, 36, 6, 16, 4, 80, 30, 30, 30
 r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0302, 8, 0.0157, 5730
 v_min, v_stp, v_p_min, tx_p, beta_0, w_var = 0, 0.1, 20.1, dbm_watts(23), db_watts(20), constants.Boltzmann * temp * bw
 # r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0151, 4, 0.0157, 2865
@@ -121,24 +121,27 @@ def energy_2(_vs, _as):
     _r_fdr = fp_area / (_f_sl * _dsc_area)
 
     # Tertiary constants for evaluating energy consumption...
-    _p_0, _kappa = (delta / 8) * rho * _f_sl * _dsc_area * (_ang_vel ** 3) * (rtr_rad ** 3), r_tw
+    _p_0 = (delta / 8) * rho * _f_sl * _dsc_area * (_ang_vel ** 3) * (rtr_rad ** 3)
     _p_1 = (1 + inc_corr) * ((wgt_uav ** 1.5) / ((2 * rho * _dsc_area) ** 0.5))
     _p_2 = 0.5 * _r_fdr * rho * _f_sl * _dsc_area
 
-    # Core constants in the energy equation...
+    ''' Core constants in the energy equation '''
+
     _ke_d = 0.5 * _mass_uav * ((_vs[-1] - _vs[0]) ** 2)
-    _a_cf = lambda _v, _a: ((_a ** 2) - (((_a * _v) ** 2) / (_v ** 2))) ** 0.5 if _v != 0 else 0
-    _c_0, _c_1, _c_2, _c_3, _c_4 = _p_0, 3 / (_u_tip ** 2), _p_1 * _kappa, 2 * (_v_0 ** 2), _p_2
+
+    _c_0, _c_1, __c_2, _c_3, _c_4 = _p_0, 3 / (_u_tip ** 2), _p_1, 2 * (_v_0 ** 2), _p_2
+
+    _kappa = lambda _v, _a: (1 + ((((rho * _r_fdr * _f_sl * _dsc_area * (_v ** 2)) +
+                                    (2 * wgt_uav * _a)) ** 2) / (4 * (wgt_uav ** 2)))) ** 0.5
 
     ''' Split individual terms from the energy equation '''
 
-    _term_0 = sum([_c_0 * (1 + (_c_1 * (__v ** 2))) for __v in _vs])
-    _term_1 = sum([_c_4 * (__v ** 3) for __v in _vs])
+    _term_0 = sum([_c_4 * (__v ** 3) for __v in _vs])
 
-    _term_2 = sum([_c_2 * (
-            (1 + ((_a_cf(_vs[_i], _as[_i]) ** 2) / (g ** 2))) ** 0.5) * (
-                           (((1 + ((_a_cf(_vs[_i], _as[_i]) ** 2) / (g ** 2)) + ((_vs[_i] ** 4) / (
-                                   _c_3 ** 2))) ** 0.5) - ((_vs[_i] ** 2) / _c_3)) ** 0.5) for _i in range(len(_vs))])
+    _term_1 = sum([_c_0 * (1 + (_c_1 * (__v ** 2))) for __v in _vs])
+
+    _term_2 = sum([__c_2 * _kappa(_vs[__i], _as[__i]) * (((((_kappa(_vs[__i], _as[__i]) ** 2) + (
+            (_vs[__i] ** 4) / (_c_3 ** 2))) ** 0.5) - ((_vs[__i] ** 2) / _c_3)) ** 0.5) for __i in range(len(_vs))])
 
     return _term_0 + _term_1 + _term_2 + _ke_d
 
@@ -164,13 +167,15 @@ def energy_3(_vs, _as):
 
     ''' Core constants in the energy equation '''
 
+    _c_0, _c_1, __c_2, _c_3 = _p_0, 3 / (_u_tip ** 2), _p_1, 2 * (_v_0 ** 2)
+
     _kappa = lambda _v, _a: (1 + ((((rho * _r_fdr * _f_sl * _dsc_area * (_v ** 2)) +
                                     (2 * wgt_uav * _a)) ** 2) / (4 * (wgt_uav ** 2)))) ** 0.5
 
-    _c_0, _c_1, __c_2, _c_3 = _p_0, 3 / (_u_tip ** 2), _p_1, 2 * (_v_0 ** 2)
+    ''' Split individual terms from the energy equation '''
 
-    # Split individual terms from the energy equation
     _term_0 = sum([_c_0 * (1 + (_c_1 * (__v ** 2))) for __v in _vs])
+
     _term_1 = sum([__c_2 * _kappa(_vs[__i], _as[__i]) * (((((_kappa(_vs[__i], _as[__i]) ** 2) + (
             (_vs[__i] ** 4) / (_c_3 ** 2))) ** 0.5) - ((_vs[__i] ** 2) / _c_3)) ** 0.5) for __i in range(len(_vs))])
 

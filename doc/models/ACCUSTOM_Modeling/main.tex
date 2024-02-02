@@ -1,0 +1,536 @@
+\documentclass{article}
+
+% Packages
+\usepackage{bm}
+\usepackage{url}
+\usepackage{bbm}
+\usepackage{cite}
+\usepackage{tabu}
+\usepackage{array}
+\usepackage{hhline}
+\usepackage{ifthen}
+\usepackage{xspace}
+\usepackage{dsfont}
+\usepackage{balance}
+\usepackage{siunitx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{caption}
+\usepackage{graphicx}
+\usepackage{multicol}
+\usepackage{amsfonts}
+\usepackage{mathrsfs}
+\usepackage{booktabs}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{makecell}
+\usepackage{footnote}
+\usepackage{verbatim}
+\usepackage{algorithm}
+\usepackage{subcaption}
+\usepackage{glossaries}
+\usepackage{soul, xcolor}
+\usepackage[T1]{fontenc}
+\usepackage{algpseudocode}
+\usepackage{algcompatible}
+\usepackage[normalem]{ulem}
+\usepackage{multirow, enumitem}
+
+% Setting up packages
+\captionsetup{font=footnotesize}
+\setlength{\textfloatsep}{1.5pt}
+\sisetup{detect-all, range-phrase=--, range-units=single, group-separator={,}}
+
+% Initializing new commands
+\newcommand{\sst}[1]{\st{#1}}
+\newcommand{\tot}{\mathrm{tot}}
+\newcommand{\tfrm}{T_{\mathrm{fr}}}
+\newcommand{\beam}[1]{\mathcal B_{#1}}
+\newcommand{\add}[1]{\textcolor{red}{#1}}
+\newcommand{\size}[1]{\left | #1 \right|}
+\newcommand{\bk}[1]{\textcolor{blue}{[BK: #1]}}
+\newcommand{\nm}[1]{\textcolor{magenta}{[NM: #1]}}
+\newcommand{\beambs}[1]{\mathcal B_{{\mathrm t},#1}}
+\newcommand{\beamue}[1]{\mathcal B_{{\mathrm r},#1}}
+\newcommand{\diag}[1]{\mathrm{diag}\left(#1 \right)}
+\newcommand{\numberthis}{\addtocounter{equation}{1}\tag{\theequation}}
+\newcommand\mst[2][red]{\setbox0=\hbox{$#2$}\rlap{\raisebox{.45\ht0}{\textcolor{#1}{\rule{\wd0}{2pt}}}}#2}
+
+% Declaring math operators
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+% Initializing additional commands
+\newcommand{\abs}[1]{\left\lvert#1\right\rvert}
+\newcommand{\morn}[1]{\bigg\lVert#1\bigg\rVert}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\suchthat}{\;\ifnum\currentgrouptype=16 \middle\fi|\;}
+
+% Redefining commands
+\renewcommand\theadalign{c}
+\renewcommand{\tabcolsep}{3pt}
+\renewcommand\theadfont{\bfseries}
+\renewcommand\cellgape{\Gape[1pt]}
+\renewcommand\theadgape{\Gape[1pt]}
+
+% Title, Author(s), and Date
+\title{ACCUSTOM: Modeling \& Formulations}
+\author{Bharath Keshavamurthy}
+\date{January 2024}
+
+% Content begins
+\begin{document}
+\maketitle
+
+% Introduction
+\section{CUSTOM \& ACCUSTOM}
+\scriptsize
+
+\begin{itemize}
+    \item \textbf{C}ontrolling \textbf{U}AV \textbf{S}warms for \textbf{T}raffic \textbf{O}ffloading in \textbf{M}IMO (ICC).
+    \item \textbf{A}daptive \textbf{C}ontrol \& \textbf{C}oordination of \textbf{U}AV \textbf{S}warms for \textbf{T}raffic \textbf{O}ffloading in \textbf{M}IMO (JSAC).
+\end{itemize}
+
+\section{Deployment model}
+\footnotesize
+
+\subsection{Grid tessellation}
+\begin{itemize}
+    \item Rectangular deployment site of length $x_{\mathrm{max}}$, breadth $y_{\mathrm{max}}$, and height $z_{\mathrm{max}}$, enclosed in a GPS geo-fence.
+    \item This deployment site is tessellated into a grid world, with each rectangular grid voxel of length $\Delta x$, breadth $\Delta y$, and height $\Delta z$.
+    \item Grid tessellation voxel counts:
+    \begin{itemize}
+        \item Number of voxels in the X-direction: $N_{x}{=}x_{\mathrm{max}}/\Delta x$;
+        \item Number of voxels in the Y-direction: $N_{y}{=}y_{\mathrm{max}}/\Delta y$;
+        \item Number of voxels in the Z-direction: $N_{z}{=}z_{\mathrm{max}}/\Delta z$;
+        \item Total number of voxels in the grid: $N_{\mathrm{vox}}{=}N_{x}{\cdot}N_{y}{\cdot}N_{z}$.
+    \end{itemize}
+\end{itemize}
+
+\subsection{UAVs \& GNs}
+\begin{itemize}
+    \item $U$ heterogeneous rotary-wing Unmanned Aerial Vehicles (UAVs).
+    \item $G$ heterogeneous Ground Nodes (GNs) distributed uniformly throughout the site.
+    \item The set of UAVs is defined as $\mathcal{U}{\triangleq}\{1,2,3,{\dots},U\}$.
+    \item The set of GNs is defined as $\mathcal{G}{\triangleq}\{1,2,3,{\dots},G\}$.
+\end{itemize}
+
+\subsection{Cartesian coordinate system}
+\begin{itemize}
+    \item For a UAV $u{\in}\mathcal{U}$, its position at time $t{\in}[0,\infty)$ is defined in a Cartesian coordinate system as $\mathbf{p}_{u}'(t){\triangleq}[x_{u}',y_{u}',z_{u}']$, where $0{\leq}x_{u}'{<}x_{\mathrm{max}}$, $0{\leq}y_{u}'{<}y_{\mathrm{max}}$, and $0{\leq}z_{u}'{<}z_{\mathrm{max}}$.
+    \item For a GN $g{\in}\mathcal{G}$, its position at time $t{\in}[0,\infty)$ is defined in a Cartesian coordinate system as $\mathbf{p}_{g}'(t){\triangleq}[x_{g}',y_{g}',z_{g}']$, where $0{\leq}x_{g}'{<}x_{\mathrm{max}}$, $0{\leq}y_{g}'{<}y_{\mathrm{max}}$, and $0{\leq}z_{g}'{<}z_{\mathrm{max}}$.
+    \item The GNs do not necessarily have to be at ground level.
+    \item The GNs are assumed to be stationary, i.e., $\mathbf{p}_{g}'(t){=}\mathbf{p}_{g}',{\forall}t{\in}[0,\infty)$.
+\end{itemize}
+
+\subsection{Voxel-based coordinate system}
+\begin{itemize}
+    \item Here, we map the Cartesian coordinate system to a voxel-based coordinate system.
+    \item Let $\mathcal{J}{\triangleq}\{1,2,3,{\dots},N_{\mathrm{vox}}\}$ be an index set. Then, the set of voxels in the deployment site is defined as $\mathcal{V}{\triangleq}\{\mathcal{V}_{j}:j{\in}\mathcal{J}\}$. Here, a voxel $\mathcal{V}_{j},{\forall}j{\in}\mathcal{J}$ is defined as $\mathcal{V}_{j}{\triangleq}\{[x_{j},y_{j},z_{j}]:x_{j,\mathrm{min}}{\leq}x_{j}{<}x_{j,\mathrm{max}},y_{j,\mathrm{min}}{\leq}y_{j}{<}y_{j,\mathrm{max}},z_{j,\mathrm{min}}{\leq}z_{j}{<}z_{j,\mathrm{max}}\}$---where $x_{j,\mathrm{min}}$ \& $x_{j,\mathrm{max}}$ are the lower- \& upper-bounds of voxel $\mathcal{V}_{j}$ in the X-direction, $y_{j,\mathrm{min}}$ \& $y_{j,\mathrm{max}}$ denote the lower- \& upper-bounds of voxel $\mathcal{V}_{j}$ in the Y-direction, and $z_{j,\mathrm{min}}$ \& $z_{j,\mathrm{max}}$ are the lower- \& upper-bounds of voxel $\mathcal{V}_{j}$ in the Z-direction.
+    \item At time $t{\in}[0,\infty)$, a UAV $u{\in}\mathcal{U}$ at position $\mathbf{p}_{u}'(t){=}[x_{u}',y_{u}',z_{u}']$ belongs to a voxel $\mathcal{V}_{j},{\in}\mathcal{J}$, if $x_{j,\mathrm{min}}{\leq}x_{u}'{<}x_{j,\mathrm{max}},y_{j,\mathrm{min}}{\leq}y_{j}'{<}y_{j,\mathrm{max}},z_{j,\mathrm{min}}{\leq}z_{j}'{<}z_{j,\mathrm{max}}$.
+    \item Thus, mapping $p_{u}'(t)$ from Cartesian coordinates to our voxel-based coordinate system, we get $\mathbf{p}_{u}(t){=}\Big[\frac{1}{8}\sum_{j'{=}1}^{8}x_{j'},\frac{1}{8}\sum_{j'{=}1}^{8}y_{j'},\frac{1}{8}\sum_{j'{=}1}^{8}z_{j'}\Big]$, where the centroid of the voxel which UAV $u$ to belongs at time $t$ is used as its position in our voxel-based coordinates.
+    \item We use a similar mapping for the positions of GNs from Cartesian to voxel-based coordinates.
+    A GN $g{\in}\mathcal{G}$ at position $\mathbf{p}_{g}'(t){=}\mathbf{p}_{g}'{=}[x_{g}',y_{g}',z_{g}'],{\forall}t{\in}[0,\infty)$ belongs to a voxel $\mathcal{V}_{j},{\in}\mathcal{J}$, if $x_{j,\mathrm{min}}{\leq}x_{g}'{<}x_{j,\mathrm{max}},y_{j,\mathrm{min}}{\leq}y_{g}'{<}y_{j,\mathrm{max}},z_{j,\mathrm{min}}{\leq}z_{g}'{<}z_{j,\mathrm{max}}$; and subsequently, $\mathbf{p}_{g}'$ is mapped to voxel coordinates as $\mathbf{p}_{g}{=}\Big[\frac{1}{8}\sum_{j'{=}1}^{8}x_{j'},\frac{1}{8}\sum_{j'{=}1}^{8}y_{j'},\frac{1}{8}\sum_{j'{=}1}^{8}z_{j'}\Big]$.
+    \item We used this voxel-based coordinate system throughout the rest of our setup.
+\end{itemize}
+
+\subsection{Depot}
+\begin{itemize}
+    \item Let $\mathcal{F}''$ be the contiguous set of coordinates corresponding to the takeoff \& landing pads for the UAVs in the fleet (i.e., the UAV depot). In Cartesian coordinates:
+    $$\mathcal{F}''{=}\{[x_{i}',y_{i}',z_{i}']:0{\leq}x_{i}'{<}x_{f},0{\leq}y_{i}'{<}y_{f},0{\leq}z_{i}'{<}z_{f}\},$$
+    where $x_{f}$, $y_{f}$, and $z_{f}$ are the end coordinates of the depot in the deployment site in X-, Y-, and Z-directions, respectively. Representing $\mathcal{F}''$ in terms of its constituent voxels:
+    $$\mathcal{F}'{=}\{\mathcal{V}_{i}:0{\leq}x_{i,\mathrm{min}}{<}x_{i,\mathrm{max}}{<}x_{f},0{\leq}y_{i,\mathrm{min}}{<}y_{i,\mathrm{max}}{<}y_{f},0{\leq}z_{i,\mathrm{min}}{<}z_{i,\mathrm{max}}{<}z_{f}\},$$
+    where $x_{i,\mathrm{min}}$ \& $x_{i,\mathrm{max}}$ are the lower- \& upper-bounds of voxel $\mathcal{V}_{i}$ in the X-direction, $y_{i,\mathrm{min}}$ \& $y_{i,\mathrm{max}}$ denote the lower- \& upper-bounds of voxel $\mathcal{V}_{i}$ in the Y-direction, and $z_{i,\mathrm{min}}$ \& $z_{i,\mathrm{max}}$ are the lower- \& upper-bounds of voxel $\mathcal{V}_{i}$ in the Z-direction. Finally, representing the depot in terms of the centroids of its constituent voxels, we get
+    $$\mathcal{F}{=}\Bigg\{\Bigg[\frac{1}{8}\sum_{i'{=}1}^{8}x_{i'},\frac{1}{8}\sum_{i'{=}1}^{8}y_{i'},\frac{1}{8}\sum_{ji'{=}1}^{8}z_{i'}\Bigg]:[x_{i'},y_{i'},z_{i'}]{\in}\mathcal{V}_{i},{\forall}\mathcal{V}_{i}{\in}\mathcal{F}'\Bigg\}.$$
+    \item Therefore, with this voxel-based representation of the depot, we impose the following constraints on the positions of the UAVs:
+    \begin{align*}
+        &\mathbf{p}_{u}(t){\in}\mathcal{F},{\forall}t{\in}[0,t_{u,\mathrm{init}}],{\forall}u{\in}\mathcal{U};\\
+        &\mathbf{p}_{u}(t){\in}\mathcal{F},{\forall}t{\geq}t_{u,\mathrm{term}},{\forall}u{\in}\mathcal{U};\text{ and}\\
+        &\mathbf{p}_{u}(t){\in}\mathcal{F},{\forall}t{\in}[t_{u,\mathrm{chrg}},t_{u,\mathrm{chrg}}{+}\tau_{u,\mathrm{chrg}}],{\forall}u{\in}\mathcal{U};
+    \end{align*}
+    where $t_{u,\mathrm{init}}$ \& $t_{u,\mathrm{term}}$ are the arbitrary mission start and end times of a UAV $u{\in}\mathcal{U}$, respectively---determined dynamically by the Upper Agent (UA) in our Hierarchical Reinforcement Learning (HRL) framework (described later in this document); and $t_{u,\mathrm{chrg}}$ is the time at which a UAV $u{\in}\mathcal{U}$ comes in to the depot $\mathcal{F}$ for recharging, while $\tau_{u,\mathrm{chrg}}$ is the amount of time spent recharging (both these parameters are again determined dynamically by the UA in our HRL framework).
+\end{itemize}
+
+\subsection{No-Fly Zones (NFZs) \& Unavoidable obstacles}
+\begin{itemize}
+    \item Let $\mathcal{Z}''$ be the set of Cartesian coordinates corresponding to NFZs and unavoidable obstacles across the deployment site, and let $\mathcal{Z}'$ be its representation in terms of its constituent voxels. Thus, representing NFZs and unavoidable obstacles in terms of the centroids of its constituent voxels, we get
+    $$\mathcal{Z}{=}\Bigg\{\Bigg[\frac{1}{8}\sum_{i'{=}1}^{8}x_{i'},\frac{1}{8}\sum_{i'{=}1}^{8}y_{i'},\frac{1}{8}\sum_{ji'{=}1}^{8}z_{i'}\Bigg]:[x_{i'},y_{i'},z_{i'}]{\in}\mathcal{V}_{i},{\forall}\mathcal{V}_{i}{\in}\mathcal{Z}'\Bigg\}.$$
+    \item Therefore, with this voxel-based representation of the NFZs and unavoidable obstacles across the site, we impose the following constraint on the positions of the UAVs:
+    $$\mathbf{p}_{u}(t){\notin}\mathcal{Z},{\forall}u{\in}\mathcal{U},{\forall}t{\in}[0,\infty).$$
+\end{itemize}
+
+\subsection{UAV \& GN positioning}
+\begin{itemize}
+    \item We assume that, during the initial GN deployment (uniformly throughout the site), the GNs do not overlap in the same voxel, i.e., $\mathbf{p}_{g_{1}}{\neq}\mathbf{p}_{g_{2}},{\forall}g_{1},g_{2}{\in}\mathcal{G},g_{1}{\neq}g_{2}$.
+    \item In addition to the UAVs possessing LiDARs and other sensors to prevent collisions amongst themselves while operating in the deployment site, we enforce a UAV-UAV collision-avoidance constraint, i.e., $\mathbf{p}_{u_{1}}(t){\neq}\mathbf{p}_{u_{2}}(t),{\forall}u_{1},u_{2}{\in}\mathcal{U},u_{1}{\neq}u_{2},{\forall}t{\in}[0,\infty)$. In other words, two UAVs cannot ever occupy the same voxel simultaneously. 
+\end{itemize}
+
+\section{Communication model}
+\footnotesize
+
+\subsection{Communication subsystems of the GNs \& UAVs}
+\begin{itemize}
+    \item A GN $g{\in}\mathcal{G}$ has $A_{g}$ antennas arranged in a rectangular planar array, driven by $A_{g}$ Tx-Rx chains via the TDD protocol. To enforce heterogeneity in GN design, for two distinct GNs $g_{1},g_{2}{\in}\mathcal{G},g_{1}{\neq}g_{2}$, $A_{g_{1}}$ may or may not be equal to $A_{g_{2}}$.
+    \item A UAV $u{\in}\mathcal{U}$ has $A_{u}$ antennas arranged in a rectangular planar array, again driven by $A_{u}$ Tx-Rx chains via the TDD protocol. Similarly, to enforce heterogeneity in UAV design, for two distinct UAVs $u_{1},u_{2}{\in}\mathcal{U},u_{1}{\neq}u_{2}$, $A_{u_{1}}$ may or may not be equal to $A_{u_{2}}$.
+\end{itemize}
+
+\subsection{GN requests}
+\begin{itemize}
+    \item Each GN $g{\in}\mathcal{G}$ generates a traffic offloading request according to a Poisson process with rate $\Lambda$ [requests per unit time].
+    \item Each request from a GN $g{\in}\mathcal{G}$ constitutes a header and the data payload. The request header consists of the following fields: the priority value ($\chi_{g}$), the maximum allowed latency ($\delta_{g,\mathrm{max}}$), the data payload size ($\nu_{g}$), and the post-deadline discount factor ($\gamma_{g}$) of the request from GN $g{\in}\mathcal{G}$ belonging to a specific traffic class (see table~\ref{T1}).
+\end{itemize}
+
+\subsection{GN-UAV uplink service model}
+\begin{itemize}
+    \item If $\delta_{gu}$ is the time taken by GN $g{\in}\mathcal{G}$ to offload its data payload to its serving UAV $u{\in}\mathcal{U}$ (based on GN-UAV positioning, A$2$G channel conditions, and MIMO beam-forming design), then the reward received by the UAV $u$ is given by $\Omega_{gu}{=}\chi_{g}\gamma_{g}^{(\delta_{gu}{-}\delta_{g,\mathrm{max}})}$.
+    \item A UAV $u{\in}\mathcal{U}$ can serve multiple requests simultaneously, while a specific request from a GN $g{\in}\mathcal{G}$ should only be associated with one UAV. Once a GN request is associated with a UAV, this specific request should be fully served by the UAV.
+\end{itemize}
+
+\begin{table*} [tb]
+	\centering
+    \scriptsize
+	\begin{tabular}{|c|c|c|c|c|}
+		\hline
+		\textbf{Traffic Class} & \textbf{Priority} $\chi$ & \textbf{Max Latency} $\delta_{\mathrm{max}}$ mins & \textbf{Payload Size} $\nu$ Mb & \textbf{Discount Factor} $\gamma$\\
+		\hline
+		Telemetry & 100 & 9.1 & 256 & 0.1\\
+		\hline
+		File Transfer & 24 & 19.0 & 536 & 0.8\\
+		\hline
+		Image & 72 & 14.5 & 512 & 0.33\\
+		\hline
+		Video Stream & 84 & 11.6 & 1387 & 0.24\\
+		\hline
+	\end{tabular}
+    \vspace{-3mm}
+	\caption{\scriptsize{Traffic classes, Priorities, Latencies, Payload sizes, and Discount factors.}}
+    \vspace{3mm}
+	\label{T1}
+\end{table*}
+
+\subsection{Signal model}
+\begin{itemize}
+    \item For a GN $g{\in}\mathcal{G}$, at time $t{\in}[0,\infty)$, the transmitted signal is described by
+    \begin{align}\label{Tx_signal}
+        \mathbf{x}_{g}(t){=}\boldsymbol{\Phi}_{g}(t)\mathbf{s}_{g}(t),
+    \end{align}
+    where $\mathbf{x}_{g}(t){\in}\mathbb{C}^{A_{g}{\times}1}$ is the transmitted signal, $\boldsymbol{\Phi}_{g}(t){\in}\mathbb{C}^{A_{g}{\times}A_{g}}$ is the linear precoding matrix applied at the GN, and $\mathbf{s}_{g}(t){\in}\mathbb{C}^{A_{g}{\times}1}$ is the symbol vector with $\mathbb{E}[\mathbf{s}_{g}^{H}(t)\mathbf{s}_{g}(t)]{=}1$.
+    \item For simplicity of notation, omitting the time variable, the transmitted signal from GN $g{\in}\mathcal{G}$ is $\mathbf{x}_{g}{=}\boldsymbol{\Phi}_{g}\mathbf{s}_{g}$, where $\mathbf{x}_{g}{\in}\mathbb{C}^{A_{g}{\times}1}$, $\boldsymbol{\Phi}_{g}{\in}\mathbb{C}^{A_{g}{\times}A_{g}}$, and $\mathbf{s}_{g}{\in}\mathbb{C}^{A_{g}{\times}1}$ with $\mathbb{E}[\mathbf{s}_{g}^{H}\mathbf{s}_{g}]{=}1$.
+    \item Consequently, at time $t{\in}[0,\infty)$, the signal received at UAV $u{\in}\mathcal{U}$ is described by
+    \begin{align}\label{Rx_signal}
+        \mathbf{y}_{u}{=}\sum_{g{\in}\mathcal{G}_{u}}\mathbf{H}_{gu}\mathbf{x}_{g}{+}\mathbf{w}_{u},
+    \end{align}
+    where $\mathbf{y}_{u}{\in}\mathbb{C}^{A_{u}{\times}1}$ is the received signal at the UAV, $\mathcal{G}_{u}$ is the set of GNs associated with the UAV, $\mathbf{H}_{gu}{\in}\mathbb{C}^{A_{u}{\times}A_{g}}$ is the channel between a GN $g{\in}\mathcal{G}_{u}$ and the UAV $u$ obtained via our ray-tracing augmented channel estimation procedure (detailed later in this document), and $\mathbf{w}_{u}{\sim}\mathcal{CN}\left(\mathbf{0},BN_{0}\mathbf{I}_{A_{u}}\right)$ is the AWGN noise vector at the UAV---with $B$ being the bandwidth pre-assigned to the UAV, $N_{0}$ is the noise power spectral density, and $\mathbf{I}_{A_{u}}$ is the identity matrix with dimensions $A_{u}{\times}A_{u}$.
+\end{itemize}
+
+\subsection{Channel model}
+\begin{itemize}
+    \item The channel gain between a GN Tx antenna $m$ and its serving UAV's Rx antenna $n$ is
+    \begin{align}\label{Channel}
+        h_{mn}{=}\beta_{mn}{-}10\alpha_{mn}\log_{10}d_{mn}{+}\xi_{mn}{+}\lambda_{mn},
+    \end{align}
+    where $h_{mn}$ is the channel gain (in dB), $\beta_{mn}$ is the average channel gain at a reference distance of $1$ m (in dB), $\alpha_{mn}$ is the pathloss exponent, $d_{mn}$ is the $3$D Euclidean distance between position vectors $\mathbf{p}_{m}{=}[x_{m},y_{m},z_{m}]$ and $\mathbf{p}_{n}{=}[x_{n},y_{n},z_{n}]$, $\xi_{mn}{\sim}\mathcal{N}\left(0,\sigma_{\mathrm{SF},mn}^{2}\right)$ is a random variable denoting the shadow-fading component with variance $\sigma_{\mathrm{SF},mn}^{2}$, and $\lambda_{mn}{\sim}\mathcal{CN}\left(\mu_{\mathrm{SSF},mn},\sigma_{\mathrm{SSF},mn}^{2}\right)$ is a random variable denoting the small-scale fading component with mean $\mu_{\mathrm{SSF},mn}$ and variance $\sigma_{\mathrm{SSF},mn}^{2}$.
+    \item Refer to the ray-tracing augmented channel estimation procedure outlined later in this document to determine these channel metrics $\left(\beta_{mn},\alpha_{mn},\sigma_{\mathrm{SF},mn}^{2},\mu_{\mathrm{SSF},mn},\sigma_{\mathrm{SSF},mn}^{2}\right)$, given the Tx antenna and Rx antenna position vectors $\mathbf{p}_{m}$ and $\mathbf{p}_{n}$.
+\end{itemize}
+
+\subsection{Additional notes}
+\begin{itemize}
+    \item The UAVs harvest traffic from the GNs according to a \emph{move-and-receive} protocol. Here, the signal degradation effects due to Doppler shifts brought on by the UAV's motion towards and/or away from the transmitting GNs are compensated via a radio design at the UAVs derived from the PLL-enabled RF-based adaptive Doppler compensation technique proposed in the state-of-the-art.
+    \item The spectrum allocated to this application (i.e., \textbf{ACCUSTOM}) is discretized into $U$ channels, with each channel having a preset bandwidth of $B$. Let the band-edges of this spectrum (each band-edge has a predetermined bandwidth of $B_{C}{<<}B$) be designated as control channels for UAV-UAV messaging and for coordination messages between the centralized operations hub and the UAVs in the fleet.
+    \item Since the control traffic (UAV-UAV and Hub-UAV) involves very short control frames relative to the large payload frames in the data traffic, we can ignore the latencies from control communication in our system model and subsequent formulations.
+\end{itemize}
+
+\section{UAV mobility energy consumption model}
+The full energy-conscious $3$D trajectory of a UAV $u{\in}\mathcal{U}$ in the fleet (obtained via the Learning Competitive Swarm Optimization algorithm) is defined as
+\begin{align}\label{3D_trajectory}
+    \mathcal{Q}_{u}\left(t_{u,\mathrm{init}},t_{u,\mathrm{term}}\right){\triangleq}\Big\{\mathbf{p}_{u}(\tau),v_{u}(\tau): \tau{\in}\left[t_{u,\mathrm{init}},t_{u,\mathrm{term}}\right]\Big\},    
+\end{align}
+where $t_{u,\mathrm{init}}$ \& $t_{u,\mathrm{term}}$ denote the trajectory start \& end times (determined by HRL), $\mathbf{p}_{u}(\tau)$ denotes the way-point (in voxel coordinates) at trajectory time $\tau{\in}\left[t_{u,\mathrm{init}},t_{u,\mathrm{term}}\right]$, and the UAV's velocity in the $3$D plane $v_{u}(\tau)$ is decomposed into its horizontal \& vertical components, i.e., $v_{u,\mathrm{horz}}(\tau){=}|v_{u}(\tau)|\cos{\angle{v_{u}(\tau)}}$ \& $v_{u,\mathrm{vert}}(\tau){=}|v_{u}(\tau)|\sin{\angle{v_{u}(\tau)}}$, ${\forall}\tau{\in}\left[t_{u,\mathrm{init}},t_{u,\mathrm{term}}\right]$.
+
+\subsection{Horizontal motion}
+For a rotary-wing UAV $u{\in}\mathcal{U}$, its mobility energy consumption upon executing an arbitrary horizontal ($2$D) trajectory comprising velocities $v_{u,\mathrm{horz}}(\tau)$ from $\tau{=}t_{u,\mathrm{init}}$ to $\tau{=}t_{u,\mathrm{term}}$ is
+\begin{align}\label{Horizontal_energy}
+    E_{\mathrm{horz}}\left(\left\{v_{u,\mathrm{horz}}(\tau)\right\}_{\tau{=}t_{u,\mathrm{init}}}^{\tau{=}t_{u,\mathrm{term}}}\right){=}&\int_{t_{u,\mathrm{init}}}^{t_{u,\mathrm{term}}}C_{0}\left(1{+}C_{1}v_{u,\mathrm{horz}}^{2}(\tau)\right)d\tau{+}\\&\int_{t_{u,\mathrm{init}}}^{t_{u,\mathrm{term}}}\kappa(\tau)C_{2}\left(\sqrt{\kappa^{2}(\tau){+}\frac{v_{u,\mathrm{horz}}^{4}(\tau)}{C_{3}^{2}}}{-}\frac{v_{u,\mathrm{horz}}^{2}(\tau)}{C_{3}}\right)^{\frac{1}{2}}d\tau{+}\nonumber\\&\int_{t_{u,\mathrm{init}}}^{t_{u,\mathrm{term}}}C_{4}v_{u,\mathrm{horz}}^{3}(\tau)d\tau{+}\frac{1}{2}m_{u}\left(v_{u,\mathrm{horz}}^{2}(t_{u,\mathrm{term}}){-}v_{u,\mathrm{horz}}^{2}(t_{u,\mathrm{init}})\right),\nonumber
+\end{align}
+where $g$ is the acceleration due to gravity at the deployment site; $m_{u}$ is the mass of UAV $u$; $C_{0}$, $C_{1}$, $C_{2}$, $C_{3}$, and $C_{4}$ are constants that depend on the UAV weight ($m_{u}g$), rotor disc area of the UAV, air density, etc.; and the term $\kappa(\tau)$ is defined as follows
+\begin{align}\label{Kappa_term_horz}
+    \kappa(\tau){=}\sqrt{1{+}\frac{\left(\rho\omega_{u}s_{u}\Gamma_{u}v_{u,\mathrm{horz}}^{2}(\tau){+}2m_{u}a_{u,\mathrm{horz}}(\tau)\right)^{2}}{4m_{u}^{2}g^{2}}},
+\end{align}
+with $\rho$ being the air density, $\omega_{u}$ being the fuselage drag ratio of the UAV, $s_{u}$ is the rotor solidity factor of the UAV, $\Gamma_{u}$ is the rotor disc area of the UAV, and $a_{u,\mathrm{horz}}(\tau){=}\frac{dv_{u,\mathrm{horz}}(\tau)}{d\tau}$ is the horizontal acceleration component of the UAV at trajectory time $\tau$.
+
+\subsection{Vertical motion}
+For a rotary-wing UAV $u{\in}\mathcal{U}$, its mobility energy consumption upon executing a vertical trajectory comprising velocities $v_{u,\mathrm{vert}}(\tau)$ from $\tau{=}t_{u,\mathrm{init}}$ to $\tau{=}t_{u,\mathrm{term}}$ is
+\begin{align}\label{Vertical_energy}
+    E_{\mathrm{vert}}\left(\left\{v_{u,\mathrm{vert}}(\tau)\right\}_{\tau{=}t_{u,\mathrm{init}}}^{\tau{=}t_{u,\mathrm{term}}}\right){=}&\int_{t_{u,\mathrm{init}}}^{t_{u,\mathrm{term}}}C_{0}\left(1{+}C_{1}v_{u,\mathrm{vert}}^{2}(\tau)\right)d\tau\\&\int_{t_{u,\mathrm{init}}}^{t_{u,\mathrm{term}}}\kappa(\tau)C_{2}\left(\sqrt{\kappa^{2}(\tau){+}\frac{v_{u,\mathrm{vert}}^{4}(\tau)}{C_{3}^{2}}}{-}\frac{v_{u,\mathrm{vert}}^{2}(\tau)}{C_{3}}\right)^{\frac{1}{2}}d\tau\nonumber,
+\end{align}
+where $C_{0}$, $C_{1}$, $C_{2}$, $C_{3}$, and $C_{4}$ are constants that depend on the UAV weight ($m_{u}g$), rotor disc area of the UAV, air density, etc.; and the term $\kappa(\tau)$ is defined as follows
+\begin{align}\label{Kappa_term_vert}
+    \kappa(\tau){=}\sqrt{1{+}\frac{\left(\rho\omega_{u}s_{u}\Gamma_{u}v_{u,\mathrm{vert}}^{2}(\tau){+}2m_{u}a_{u,\mathrm{vert}}(\tau)\right)^{2}}{4m_{u}^{2}g^{2}}},
+\end{align}
+with $\rho$ being the air density, $\omega_{u}$ being the fuselage drag ratio of the UAV, $s_{u}$ is the rotor solidity factor of the UAV, $\Gamma_{u}$ is the rotor disc area of the UAV, and $a_{u,\mathrm{vert}}(\tau){=}\frac{dv_{u,\mathrm{vert}}(\tau)}{d\tau}$ is the vertical acceleration component of the UAV at trajectory time $\tau$.
+
+\subsection{Horizontal + Vertical motion}
+Under the $3$D trajectory setup described earlier in this section, the overall mobility energy consumption of a rotary-wing UAV $u{\in}\mathcal{U}$ is given by
+\begin{align}\label{3D_energy}
+    E_{\mathrm{3D}}\left(\mathcal{Q}_{u}\left(t_{u,\mathrm{init}},t_{u,\mathrm{term}}\right)\right)&{=}E_{\mathrm{3D}}\left(\Big\{\mathbf{p}_{u}(\tau),v_{u,\mathrm{horz}}(\tau),v_{u,\mathrm{vert}}(\tau): \tau{\in}\left[t_{u,\mathrm{init}},t_{u,\mathrm{term}}\right]\Big\}\right)\\&{=}E_{\mathrm{horz}}\left(\left\{v_{u,\mathrm{horz}}(\tau)\right\}_{\tau{=}t_{u,\mathrm{init}}}^{\tau{=}t_{u,\mathrm{term}}}\right){+}E_{\mathrm{vert}}\left(\left\{v_{u,\mathrm{vert}}(\tau)\right\}_{\tau{=}t_{u,\mathrm{init}}}^{\tau{=}t_{u,\mathrm{term}}}\right)\nonumber.
+\end{align}
+
+\subsection{Additional notes}
+\begin{itemize}
+    \item Each UAV $u{\in}\mathcal{U}$ in the fleet has an on-board energy source (e.g., battery) with maximum capacity $E_{u,\mathrm{max}}$ such that $E_{u}(0){=}E_{u,\mathrm{max}}$, i.e., each UAV is assumed to be fully-charged at mission start.
+    \item Since the UAVs in the fleet are only receiving traffic from the GNs, and since the UAVs are not themselves involved in any multi-antenna transmissions, we can safely ignore the communication energy consumption of a UAV (used to only operate the receive chains, negligible relative to its mobility energy consumption).
+\end{itemize}
+
+\section{Ray-tracing augmented channel estimation}
+\subsection{Problem setup}
+\begin{itemize}
+    \item We generate a radio map for the entire deployment site using a channel estimation procedure seeded by a small subset of ray-tracing measurements on Wireless InSite.
+    \item The channel gain between a GN Tx antenna $m$ and its serving UAV's Rx antenna $n$ is
+    \begin{align*}
+        h_{mn}{=}\beta_{mn}{-}10\alpha_{mn}\log_{10}d_{mn}{+}\xi_{mn}{+}\lambda_{mn},
+    \end{align*}
+    where $h_{mn}$ is the channel gain (in dB), $\beta_{mn}$ is the average channel gain at a reference distance of $1$ m (in dB), $\alpha_{mn}$ is the pathloss exponent, $d_{mn}$ is the $3$D Euclidean distance between position vectors $\mathbf{p}_{m}{=}[x_{m},y_{m},z_{m}]$ and $\mathbf{p}_{n}{=}[x_{n},y_{n},z_{n}]$, $\xi_{mn}{\sim}\mathcal{N}\left(0,\sigma_{\mathrm{SF},mn}^{2}\right)$ is a random variable denoting the shadow-fading component with variance $\sigma_{\mathrm{SF},mn}^{2}$, and $\lambda_{mn}{\sim}\mathcal{CN}\left(\mu_{\mathrm{SSF},mn},\sigma_{\mathrm{SSF},mn}^{2}\right)$ is a random variable denoting the small-scale fading component with mean $\mu_{\mathrm{SSF},mn}$ and variance $\sigma_{\mathrm{SSF},mn}^{2}$.
+    \item Here, the $3$D Euclidean distance $d_{mn}$ between the two position vectors $\mathbf{p}_{m}$ and $\mathbf{p}_{n}$ is
+    \begin{align}\label{Distance}
+        d_{mn}{=}\sqrt{(x_{m}{-}x_{n})^{2}{+}(y_{m}{-}y_{n})^{2}{+}(z_{m}{-}z_{n})^{2}}.
+    \end{align}
+    \item Let $\mathcal{D}{\subseteq}\mathbb{R}^{6}$ be the set of all possible GN-UAV position pairs. Let $R$ be the number of site partitions for our radio map generation procedure, i.e.,
+    \begin{align}
+        \mathcal{D}{=}\bigcup_{r{=}1}^{R}\mathcal{D}_{r};\ D_{r_{1}}{\cap}D_{r_{2}}{=}\phi;\ {\forall}r_{1},r_{2}{\in}\{1,2,3,{\dots},R\};\ r_{1}{\neq}r_{2}.
+    \end{align}
+    \item Thus, with this site partitioning, we can write the channel gain (in dB) between GN Tx antenna position vector $\mathbf{p}_{m}$ and UAV Rx antenna position vector $\mathbf{p}_{n}$ as
+    \begin{align}\label{Partitioned_channel_gains}
+        h_{mn}{=}h(\mathbf{p}_{m},\mathbf{p}_{n}){=}\sum_{r{=}1}^{R}\Big(\beta_{r}{-}10\alpha_{r}\log_{10}d(\mathbf{p}_{m},\mathbf{p}_{n}){+}\xi_{r}{+}\lambda_{r}\Big)\mathbbm{1}\Big\{(\mathbf{p}_{m},\mathbf{p}_{n}){\in}\mathcal{D}_{r}\Big\},
+    \end{align}
+    where $d(\mathbf{p}_{m},\mathbf{p}_{n}){=}\norm{\mathbf{p}_{m}{-}\mathbf{p}_{n}}_{2}$ is the $3$D Euclidean distance between the two position vectors $\mathbf{p}_{m}{=}[x_{m},y_{m},z_{m}]$ and $\mathbf{p}_{n}{=}[x_{n},y_{n},z_{n}]$ (as described by Eq.~\eqref{Distance}. Also, for a site partition $r{\in}\{1,2,3,{\dots},R\}$, $\beta_{r}$ is the average channel gain at a reference distance of $1$ m (in dB), $\alpha_{r}$ is the pathloss exponent, $\xi_{r}{\sim}\mathcal{N}\left(0,\sigma_{\mathrm{SF},r}^{2}\right)$ is a random variable denoting the shadow-fading component with variance $\sigma_{\mathrm{SF},r}^{2}$, and $\lambda_{r}{\sim}\mathcal{CN}\left(\mu_{\mathrm{SSF},r},\sigma_{\mathrm{SSF},r}^{2}\right)$ is a random variable denoting small-scale fading with mean $\mu_{\mathrm{SSF},r}$ and variance $\sigma_{\mathrm{SSF},r}^{2}$.
+    \item Let $\mathcal{M}{=}\Big\{\left(\mathbf{p}_{m}^{(l)},\mathbf{p}_{n}^{(l)},h_{mn}^{(l)}\right):l{=}1,2,3,{\dots}L\Big\}$ be the set of $L$ ray-tracing measurements obtained on Wireless InSite for a subset of GN-UAV position pairs in $\mathcal{D}$, where $\mathbf{p}_{m}^{(l)}$ is the position vector of the GN Tx antenna, $\mathbf{p}_{n}^{(l)}$ is the position vector of the UAV Rx antenna, and $h_{mn}^{(l)}$ is the measured channel gain in dB, ${\forall}l{\in}\{1,2,3,{\dots}L\}$.
+    \item Given the channel gain description in Eq.~\eqref{Partitioned_channel_gains} and conditioned on GN-UAV position pair $\left(\mathbf{p}_{m},\mathbf{p}_{n}\right){\in}\mathcal{D}$ belonging to site partition $\mathcal{D}_{r}{\subset}\mathcal{D},r{\in}\{1,2,3,{\dots},R\}$, i.e., $\left(\mathbf{p}_{m},\mathbf{p}_{n}\right){\in}\mathcal{D}_{r}$, we can write the joint probability density function for the GN-UAV position pair and its corresponding channel gain as
+    \begin{align}\label{Conditioned_joint_pdf}
+        f_{r}\left(\mathbf{p}_{m},\mathbf{p}_{n},h_{mn}\right){=}\frac{1}{\sqrt{2\pi \left(\sigma_{\mathrm{SF},r}^{2}{+}\sigma_{\mathrm{SSF},r}^{2}\right)}}\exp\left\{-\frac{\left(h_{mn}{-}\beta_{r}{+}10\alpha_{r}\log_{10}d_{mn}{-}\mu_{\mathrm{SSF},r}\right)^{2}}{2\left(\sigma_{\mathrm{SF},r}^{2}{+}\sigma_{\mathrm{SSF},r}^{2}\right)}\right\}
+    \end{align}
+    \item Based on this conditional probability density function in Eq.~\eqref{Conditioned_joint_pdf}, using the \emph{Law of Total Probability}, we can write the general joint probability density function as
+    \begin{align}\label{General_joint_pdf_1}
+        f\left(\mathbf{p}_{m},\mathbf{p}_{n},h_{mn},\boldsymbol{\psi}\right)&{=}\sum_{r{=}1}^{R}\mathbb{P}\left(\mathbf{p}_{m},\mathbf{p}_{n},h_{mn}\middle|\psi_{r}{=}1\right)\mathbb{P}\left(\psi_{r}{=}1\right)\nonumber\\&{=}\sum_{r{=}1}^{R}f_{r}\left(\mathbf{p}_{m},\mathbf{p}_{n},h_{mn}\right)\pi_{r},
+    \end{align}
+    where for a given pair of GN-UAV position vectors $\left(\mathbf{p}_{m},\mathbf{p}_{n}\right){\in}\mathcal{D}$, $\boldsymbol{\psi}{\triangleq}[\psi_{1},\psi_{2},\psi_{3},{\dots},\psi_{R}]$ denotes the partition classification vector---with $\psi_{r}{\in}\{0,1\}$ indicating whether the given GN-UAV position pair belongs to site partition $r{\in}\{1,2,3,{\dots},R\}$ ($\psi_{r}{=}1$) or not ($\psi_{r}{=}0$); and $\pi_{r}{=}\mathbb{P}\left(\psi_{r}{=}1\right)$ denotes the marginal probability that the given GN-UAV position pair belongs to site partition $r{\in}\{1,2,3,{\dots},R\}$---with $\sum_{r{=}1}^{R}\pi_{r}{=}\sum_{r{=}1}^{R}\mathbb{P}\left(\psi_{r}{=}1\right){=}1$. Next, we can rewrite Eq.~\eqref{General_joint_pdf_1} as
+    \begin{align}\label{General_joint_pdf_2}
+        f\left(\mathbf{p}_{m},\mathbf{p}_{n},h_{mn},\boldsymbol{\psi}\right){=}\prod_{r{=}1}^{R}\Big(f_{r}\left(\mathbf{p}_{m},\mathbf{p}_{n},h_{mn}\right)\Big)^{\psi_{r}}{\cdot}\prod_{r{=}1}^{R}\left(\pi_{r}\right)^{\psi_{r}}.
+    \end{align}
+    \item The set of channel parameters to be estimated \& associated with the site partitions is
+    \begin{align}\label{Parameters_to_be_estimated}
+        \mathcal{B}{\triangleq}\Big\{\left(\alpha_{r},\beta_{r},\sigma_{\mathrm{SF},r},\mu_{\mathrm{SSF},r},\sigma_{\mathrm{SSF},r},\pi_{r}\right):r{=}1,2,3,{\dots},R\Big\},
+    \end{align}
+    where for each site partition $r{=}1,2,3,{\dots},R$, the channel parameters $\alpha_{r}$, $\beta_{r}$, $\sigma_{\mathrm{SF},r}$, $\mu_{\mathrm{SSF},r}$, and $\sigma_{\mathrm{SSF},r}$ are defined in Eq.~\eqref{Partitioned_channel_gains}, and the marginal probability of a given GN-UAV position pair belonging to the partition $r$, i.e., $\pi_{r}$, is defined in Eq.~\eqref{General_joint_pdf_1}.
+\end{itemize}
+
+\subsection{Maximum Likelihood Estimation (MLE)}
+\begin{itemize}
+    \item The likelihood function for the set of measurements $\mathcal{M}$ obtained on Wireless InSite is
+    \begin{align}\label{Likelihood_function}
+        g(\mathcal{B}){=}&\prod_{l{=}1}^{L}\mathbb{P}\left(\mathbf{p}_{m}^{(l)},\mathbf{p}_{n}^{(l)},h_{mn}^{(l)},\boldsymbol{\psi}^{(l)}\middle|\mathcal{B}\right){=}\prod_{l{=}1}^{L}f\left(\mathbf{p}_{m}^{(l)},\mathbf{p}_{n}^{(l)},h_{mn}^{(l)},\boldsymbol{\psi}^{(l)}\middle|\mathcal{B}\right)\nonumber\\{=}&\prod_{l{=}1}^{L}\Bigg[\prod_{r{=}1}^{R}\Big(f_{r}\left(\mathbf{p}_{m},\mathbf{p}_{n},h_{mn}\right)\Big)^{\psi_{r}^{(l)}}{\cdot}\prod_{r{=}1}^{R}\left(\pi_{r}\right)^{\psi_{r}^{(l)}}\Bigg]\text{ from Eq.~\eqref{General_joint_pdf_2}}.
+    \end{align}
+    \item With this definition of the likelihood function in Eq.~\eqref{Likelihood_function}, the MLE problem is
+    \begin{align}\label{MLE_1}
+        \underset{{\mathcal{B},\left\{\boldsymbol{\psi}^{(l)}:l{=}1,2,3,{\dots},L\right\}}}{\mathrm{maximize}}\ \ &\prod_{l{=}1}^{L}\Bigg[\prod_{r{=}1}^{R}\Big(f_{r}\left(\mathbf{p}_{m},\mathbf{p}_{n},h_{mn}\right)\Big)^{\psi_{r}^{(l)}}{\cdot}\prod_{r{=}1}^{R}\left(\pi_{r}\right)^{\psi_{r}^{(l)}}\Bigg]\nonumber\\&\text{subject to }\sum_{r{=}1}^{R}\pi_{r}{=}1.
+    \end{align}
+    \item Reformulating Eq.~\eqref{MLE_1} as MLE in the log-likelihood, we get
+    \begin{align}\label{MLE_2}
+        \underset{{\mathcal{B},\left\{\boldsymbol{\psi}^{(l)}:l{=}1,2,3,{\dots},L\right\}}}{\mathrm{maximize}}\ \ &\sum_{l{=}1}^{L}\sum_{r{=}1}^{R}\Bigg[\psi_{r}^{(l)}\Bigg(\log\Big(f_{r}\left(\mathbf{p}_{m},\mathbf{p}_{n},h_{mn}\right)\Big){+}\log\left(\pi_{r}\right)\Bigg)\Bigg]\nonumber\\&\text{subject to }\sum_{r{=}1}^{R}\pi_{r}{=}1.
+    \end{align}
+    \item Since the site partition labels $\psi_{r}^{(l)},{\forall}r{\in}\{1,2,3,{\dots},R\}$ are unknown for the samples in $\mathcal{M}$, i.e., $\left(\mathbf{p}_{m}^{(l)},\mathbf{p}_{n}^{(l)},h_{mn}^{(l)}\right),{\forall}l{=}1,2,3,{\dots}L$, the exact expression for this log-likelihood function in Eq.~\eqref{MLE_2} is unattainable. To solve this problem, we can generate a statistical estimate of $\psi_{r}^{(l)},{\forall}r{\in}\{1,2,3,{\dots},R\},{\forall}l{\in}\{1,2,3,{\dots},L\}$ as follows:
+    \begin{align}\label{Statistical_estimate_of_site_labels_1}
+        \Bar{\psi}_{r}^{(l)}(\mathcal{B}){=}\mathbb{E}\left[\psi_{r}^{(l)}\middle|\mathbf{p}_{m}^{(l)},\mathbf{p}_{n}^{(l)},\mathcal{B}\right].
+    \end{align}
+    Since $\psi_{r}^{(l)}{\in}\{0,1\}$ is a Bernoulli random variable ${\forall}l{\in}\{1,2,3,{\dots},L\}$, we can write the $\mathbb{E}\left[\psi_{r}^{(l)}\middle|\mathbf{p}_{m}^{(l)},\mathbf{p}_{n}^{(l)},\mathcal{B}\right]$ term in Eq.~\eqref{Statistical_estimate_of_site_labels_1} in terms of the success probability, and simplify it further to get the following:
+    \begin{align}\label{Statistical_estimate_of_site_labels_2}
+        \Bar{\psi}_{r}^{(l)}(\mathcal{B}){=}&\mathbb{P}\left(\psi_{r}^{(l)}{=}1\middle|\mathbf{p}_{m}^{(l)},\mathbf{p}_{n}^{(l)},\mathcal{B}\right)\nonumber\\{=}&\frac{\mathbb{P}\left(\mathbf{p}_{m}^{(l)},\mathbf{p}_{n}^{(l)},h_{mn}^{(l)}\middle|\mathcal{B},\psi_{r}^{(l)}{=}1\right)\mathbb{P}\left(\psi_{r}^{(l)}{=}1\right)}{\sum_{r'{=}1}^{R}\mathbb{P}\left(\mathbf{p}_{m}^{(l)},\mathbf{p}_{n}^{(l)},h_{mn}^{(l)}\middle|\mathcal{B},\psi_{r'}^{(l)}{=}1\right)\mathbb{P}\left(\psi_{r'}^{(l)}{=}1\right)}\nonumber\\{=}&\frac{f_{r}\left(\mathbf{p}_{m}^{(l)},\mathbf{p}_{n}^{(l)},h_{mn}^{(l)}\middle|\mathcal{B}\right)\pi_{r}}{\sum_{r'{=}1}^{R}f_{r'}\left(\mathbf{p}_{m}^{(l)},\mathbf{p}_{n}^{(l)},h_{mn}^{(l)}\middle|\mathcal{B}\right)\pi_{r'}}.
+    \end{align}
+    \item Thus, having obtained a statistical estimate of the site partition labels, i.e., $\Bar{\psi}_{r}^{(l)}$, ${\forall}r{\in}\{1,2,3,{\dots},R\},{\forall}l{=}1,2,3,{\dots}L$, we can rewrite the MLE problem in the log-likelihood (Eq.~\eqref{MLE_2}) as follows:
+    \begin{align}\label{MLE_3}
+        \underset{{\mathcal{B},\left\{\boldsymbol{\psi}^{(l)}:l{=}1,2,3,{\dots},L\right\}}}{\mathrm{maximize}}\ \ &\mathbb{E}\Bigg[\sum_{l{=}1}^{L}\sum_{r{=}1}^{R}\Bigg\{\psi_{r}^{(l)}\Bigg(\log\Big(f_{r}\left(\mathbf{p}_{m},\mathbf{p}_{n},h_{mn}\right)\Big){+}\log\left(\pi_{r}\right)\Bigg)\Bigg\}\Bigg]\nonumber\\&\text{subject to }\sum_{r{=}1}^{R}\pi_{r}{=}1;
+    \end{align}
+    \begin{align}\label{MLE_4}
+        \underset{{\mathcal{B},\left\{\boldsymbol{\psi}^{(l)}:l{=}1,2,3,{\dots},L\right\}}}{\mathrm{maximize}}\ \ &\sum_{l{=}1}^{L}\sum_{r{=}1}^{R}\Bigg[\Bar{\psi}_{r}^{(l)}(\mathcal{B})\Bigg(\log\Big(f_{r}\left(\mathbf{p}_{m},\mathbf{p}_{n},h_{mn}\right)\Big){+}\log\left(\pi_{r}\right)\Bigg)\Bigg]\nonumber\\&\text{subject to }\sum_{r{=}1}^{R}\pi_{r}{=}1.
+    \end{align}
+    \item With this reformulation in Eq.~\eqref{MLE_4}, we now have a convex problem in $\alpha_{r}$, $\beta_{r}$, $\sigma_{\mathrm{SF},r}$, $\mu_{\mathrm{SSF},r}$, $\sigma_{\mathrm{SSF},r}$, and $\pi_{r}$, which can be solved via \emph{Iterative Search} described next.
+\end{itemize}
+
+\subsection{Iterative search algorithm}
+\subsubsection{Initialization}
+\begin{itemize}
+    \item With the channel gains as the clustering variable, use K-means clustering to cluster the set of measurements $\mathcal{M}{=}\left\{\left(\mathbf{p}_{m}^{(l)},\mathbf{p}_{n}^{(l)},h_{mn}^{(l)}\right):l{=}1,2,3,{\dots},L\right\}$ into $R$ partitions, i.e.,
+    \begin{align}\label{Clustering}
+        &\underset{\left\{\mathcal{R}_{1},\mathcal{R}_{2},\mathcal{R}_{3},{\dots},\mathcal{R}_{R}\right\}}{\mathrm{argmin}}\sum_{r{=}1}^{R}\sum_{h_{mn}{\in}\mathcal{R}_{r}}\norm{h_{mn}{-}\Bar{h}_{r,mn}}_{2}^{2}\nonumber\\&\text{ subject to }R{<<}L\text{ and }|\mathcal{R}_{1}|{+}|\mathcal{R}_{2}|{+}|\mathcal{R}_{3}|{+}{\dots}{+}|\mathcal{R}_{R}|{=}L,\nonumber\\&\text{ where }\Bar{h}_{r,mn}{=}\frac{1}{|\mathcal{R}_{r}|}\sum_{h_{mn}{\in}\mathcal{R}_{r}}h_{mn},{\forall}r{\in}\{1,2,3,{\dots},R\}.
+    \end{align}
+    \item Then, initialize $\Bar{\psi}_{r}^{(l)}\left(\mathcal{B}^{(0)}\right){=}1$, if $h_{mn}^{(l)}{\in}\mathcal{R}_{r}$, i.e., the measurement sample $\left(\mathbf{p}_{m}^{(l)},\mathbf{p}_{n}^{(l)},h_{mn}^{(l)}\right){\in}\mathcal{M}$ belongs to the partition set $\mathcal{R}_{r},r{\in}\{1,2,3,{\dots},R\}$.
+    \item Next, using these initial estimates, compute $\alpha_{r}^{(0)}$, $\beta_{r}^{(0)}$, $\sigma_{\mathrm{SF},r}^{(0)}$, $\mu_{\mathrm{SSF},r}^{(0)}$, $\sigma_{\mathrm{SSF},r}^{(0)}$, and $\pi_{r}^{(0)}$, ${\forall}r{\in}\{1,2,3,{\dots},R\}$ using Eqs.~\eqref{Algorithm_alpha_beta},~\eqref{Algorithm_std_sf},~\eqref{Algorithm_mean_ssf},~\eqref{Algorithm_std_ssf}, and~\eqref{Pi_lagrangian} outlined below.
+    \item Starting with these estimates $\Bar{\psi}_{r}^{(l)}\left(\mathcal{B}^{(0)}\right),{\forall}r{\in}\{1,2,3,{\dots},R\},{\forall}l{\in}\{1,2,3,{\dots},L\}$, iterate through the steps below ($i{=}1,2,3,{\dots}$) until the values of the parameters $\alpha_{r}$, $\beta_{r}$, $\sigma_{\mathrm{SF},r}$, $\mu_{\mathrm{SSF},r}$, $\sigma_{\mathrm{SSF},r}$, and $\pi_{r}$, ${\forall}r{\in}\{1,2,3,{\dots},R\}$ do not change above a pre-defined threshold between successive iterations.
+\end{itemize}
+
+\subsubsection{Iteration}
+At the $i^{\mathrm{th}}$ $(i{=}1,2,3,{\dots})$ iteration, with the value of the channel parameters $\mathcal{B}^{(i{-}1)}$:
+\begin{itemize}
+    \item Compute $\Bar{\psi}_{r}^{(l)}\left(\mathcal{B}^{(i{-}1)}\right)$ according to Eq.~\eqref{Statistical_estimate_of_site_labels_2}, ${\forall}r{\in}\{1,2,3,{\dots},R\}$, ${\forall}l{\in}\{1,2,3,{\dots},L\}$.
+    \item The objective function of the optimization problem in Eq.~\eqref{MLE_4} is
+    \scriptsize{
+    \begin{align}\label{Algorithm_objective}
+        &\mathbb{E}\left[\log g\left(\mathcal{B}^{(i{-}1)}\right)\right]{=}\\&\sum_{l{=}1}^{L}\sum_{r{=}1}^{R}\left[\Bar{\psi}_{r}^{(l)}\left(\mathcal{B}^{(i{-}1)}\right)\left(\log\left\{\frac{1}{\sqrt{2\pi \left(\sigma_{\mathrm{SF},r}^{2}{+}\sigma_{\mathrm{SSF},r}^{2}\right)}}\exp\Bigg\{-\frac{\left(h_{mn}^{(l)}{-}\beta_{r}{+}10\alpha_{r}\log_{10}d_{mn}^{(l)}{-}\mu_{\mathrm{SSF},r}\right)^{2}}{2\left(\sigma_{\mathrm{SF},r}^{2}{+}\sigma_{\mathrm{SSF},r}^{2}\right)}\Bigg\}\right\}{+}\log\left(\pi_{r}\right)\right)\right]\nonumber.
+    \end{align}}\footnotesize
+    \item To solve for $\Big\{\left(\alpha_{r},\beta_{r}\right):r{=}1,2,3,{\dots},R\Big\}$, fix all the other parameters in $\mathcal{B}^{(i{-}1)}$, i.e., $\sigma_{\mathrm{SF},r}{=}\sigma_{\mathrm{SF},r}^{(i{-}1)}$, $\mu_{\mathrm{SSF},r}{=}\mu_{\mathrm{SSF},r}^{(i{-}1)}$, $\sigma_{\mathrm{SSF},r}{=}\sigma_{\mathrm{SSF},r}^{(i{-}1)}$, and $\pi_{r}{=}\pi_{r}^{(i{-}1)}$, ${\forall}r{\in}\{1,2,3,{\dots},R\}$. Then, solve the following optimization problem:
+    \begin{align}\label{Algorithm_alpha_beta}
+        \underset{\Big\{\left(\alpha_{r},\beta_{r}\right):r{=}1,2,3,{\dots},R\Big\}}{\mathrm{maximize}}\mathbb{E}\Bigg[\log g\left(\boldsymbol{\alpha},\boldsymbol{\beta},\boldsymbol{\sigma}_{\mathrm{SF}}^{(i{-}1)},\boldsymbol{\mu}_{\mathrm{SSF}}^{(i{-}1)},\boldsymbol{\sigma}_{\mathrm{SSF}}^{(i{-}1)},\boldsymbol{\pi}^{(i{-}1)}\right)\Bigg],
+    \end{align}
+    where $\boldsymbol{\alpha}{=}\left[\alpha_{1},\alpha_{2},\alpha_{3},{\dots},\alpha_{R}\right]$ and $\boldsymbol{\beta}{=}\left[\beta_{1},\beta_{2},\beta_{3},{\dots},\beta_{R}\right]$ are the optimization variables; while the other variables are fixed in this step of the algorithm $\boldsymbol{\sigma}_{\mathrm{SF}}{=}\boldsymbol{\sigma}_{\mathrm{SF}}^{(i{-}1)}{=}\left[\sigma_{\mathrm{SF},1}^{(i{-}1)},\sigma_{\mathrm{SF},2}^{(i{-}1)},\sigma_{\mathrm{SF},3}^{(i{-}1)},{\dots},\sigma_{\mathrm{SF},R}^{(i{-}1)}\right]$, $\boldsymbol{\mu}_{\mathrm{SSF}}{=}\boldsymbol{\mu}_{\mathrm{SSF}}^{(i{-}1)}{=}\left[\mu_{\mathrm{SSF},1}^{(i{-}1)},\mu_{\mathrm{SSF},2}^{(i{-}1)},\mu_{\mathrm{SSF},3}^{(i{-}1)},{\dots},\mu_{\mathrm{SSF},R}^{(i{-}1)}\right]$, $\boldsymbol{\sigma}_{\mathrm{SSF}}{=}\boldsymbol{\sigma}_{\mathrm{SSF}}^{(i{-}1)}{=}\left[\sigma_{\mathrm{SSF},1}^{(i{-}1)},\sigma_{\mathrm{SSF},2}^{(i{-}1)},\sigma_{\mathrm{SSF},3}^{(i{-}1)},{\dots},\sigma_{\mathrm{SSF},R}^{(i{-}1)}\right]$, and $\boldsymbol{\pi}{=}\boldsymbol{\pi}^{(i{-}1)}{=}\left[\pi_{1}^{(i{-}1)},\pi_{2}^{(i{-}1)},\pi_{3}^{(i{-}1)},{\dots},\pi_{R}^{(i{-}1)}\right]$.
+    \begin{align}
+        &\text{To get }\alpha_{r}^{(i)},{\forall}r{\in}\{1,2,3,{\dots},R\}:\ \frac{\partial}{\partial\alpha_{r}}\mathbb{E}\Bigg[\log g\left(\boldsymbol{\alpha},\boldsymbol{\beta},\boldsymbol{\sigma}_{\mathrm{SF}}^{(i{-}1)},\boldsymbol{\mu}_{\mathrm{SSF}}^{(i{-}1)},\boldsymbol{\sigma}_{\mathrm{SSF}}^{(i{-}1)},\boldsymbol{\pi}^{(i{-}1)}\right)\Bigg]{=}0;\nonumber\\
+        &\text{To get }\beta_{r}^{(i)},{\forall}r{\in}\{1,2,3,{\dots},R\}:\ \frac{\partial}{\partial\beta_{r}}\mathbb{E}\Bigg[\log g\left(\boldsymbol{\alpha},\boldsymbol{\beta},\boldsymbol{\sigma}_{\mathrm{SF}}^{(i{-}1)},\boldsymbol{\mu}_{\mathrm{SSF}}^{(i{-}1)},\boldsymbol{\sigma}_{\mathrm{SSF}}^{(i{-}1)},\boldsymbol{\pi}^{(i{-}1)}\right)\Bigg]{=}0.\nonumber
+    \end{align}
+    \item To solve for $\Big\{\sigma_{\mathrm{SF},r}:r{=}1,2,3,{\dots},R\Big\}$, fix all the other parameters in $\mathcal{B}^{(i{-}1)}$, i.e., $\alpha_{r}{=}\alpha_{r}^{(i{-}1)}$, $\beta_{r}{=}\beta_{r}^{(i{-}1)}$, $\mu_{\mathrm{SSF},r}{=}\mu_{\mathrm{SSF},r}^{(i{-}1)}$, $\sigma_{\mathrm{SSF},r}{=}\sigma_{\mathrm{SSF},r}^{(i{-}1)}$, and $\pi_{r}{=}\pi_{r}^{(i{-}1)}$, ${\forall}r{\in}\{1,2,3,{\dots},R\}$. Then, solve the following optimization problem:
+    \begin{align}\label{Algorithm_std_sf}
+        \underset{\Big\{\sigma_{\mathrm{SF},r}:r{=}1,2,3,{\dots},R\Big\}}{\mathrm{maximize}}\mathbb{E}\Bigg[\log g\left(\boldsymbol{\alpha}^{(i{-}1)},\boldsymbol{\beta}^{(i{-}1)},\boldsymbol{\sigma}_{\mathrm{SF}},\boldsymbol{\mu}_{\mathrm{SSF}}^{(i{-}1)},\boldsymbol{\sigma}_{\mathrm{SSF}}^{(i{-}1)},\boldsymbol{\pi}^{(i{-}1)}\right)\Bigg],
+    \end{align}
+    where $\boldsymbol{\sigma}_{\mathrm{SF}}{=}\left[\sigma_{\mathrm{SF},1},\sigma_{\mathrm{SF},2},\sigma_{\mathrm{SF},3},{\dots},\sigma_{\mathrm{SF},R}\right]$ is the optimization variable; while the other variables are fixed in this step of the algorithm $\boldsymbol{\alpha}{=}\boldsymbol{\alpha}^{(i{-}1)}{=}\left[\alpha_{1}^{(i{-}1)},\alpha_{2}^{(i{-}1)},\alpha_{3}^{(i{-}1)},{\dots},\alpha_{R}^{(i{-}1)}\right]$, $\boldsymbol{\beta}{=}\boldsymbol{\beta}^{(i{-}1)}{=}\left[\beta_{1}^{(i{-}1)},\beta_{2}^{(i{-}1)},\beta_{3}^{(i{-}1)},{\dots},\beta_{R}^{(i{-}1)}\right]$, $\boldsymbol{\mu}_{\mathrm{SSF}}{=}\boldsymbol{\mu}_{\mathrm{SSF}}^{(i{-}1)}{=}\left[\mu_{\mathrm{SSF},1}^{(i{-}1)},\mu_{\mathrm{SSF},2}^{(i{-}1)},\mu_{\mathrm{SSF},3}^{(i{-}1)},{\dots},\mu_{\mathrm{SSF},R}^{(i{-}1)}\right]$, $\boldsymbol{\sigma}_{\mathrm{SSF}}{=}\boldsymbol{\sigma}_{\mathrm{SSF}}^{(i{-}1)}{=}\left[\sigma_{\mathrm{SSF},1}^{(i{-}1)},\sigma_{\mathrm{SSF},2}^{(i{-}1)},\sigma_{\mathrm{SSF},3}^{(i{-}1)},{\dots},\sigma_{\mathrm{SSF},R}^{(i{-}1)}\right]$, and $\boldsymbol{\pi}{=}\boldsymbol{\pi}^{(i{-}1)}{=}\left[\pi_{1}^{(i{-}1)},\pi_{2}^{(i{-}1)},\pi_{3}^{(i{-}1)},{\dots},\pi_{R}^{(i{-}1)}\right]$.
+    \begin{align}
+        \text{To get }\sigma_{\mathrm{SF},r}^{(i)},{\forall}r{\in}\{1,2,3,{\dots},R\}:\ \frac{\partial}{\partial\sigma_{\mathrm{SF},r}}\mathbb{E}\Bigg[\log g\left(\boldsymbol{\alpha}^{(i{-}1)},\boldsymbol{\beta}^{(i{-}1)},\boldsymbol{\sigma}_{\mathrm{SF}},\boldsymbol{\mu}_{\mathrm{SSF}}^{(i{-}1)},\boldsymbol{\sigma}_{\mathrm{SSF}}^{(i{-}1)},\boldsymbol{\pi}^{(i{-}1)}\right)\Bigg]{=}0.\nonumber
+    \end{align}
+    \item To solve for $\Big\{\mu_{\mathrm{SSF},r}:r{=}1,2,3,{\dots},R\Big\}$, fix all the other parameters in $\mathcal{B}^{(i{-}1)}$, i.e., $\alpha_{r}{=}\alpha_{r}^{(i{-}1)}$, $\beta_{r}{=}\beta_{r}^{(i{-}1)}$, $\sigma_{\mathrm{SF},r}{=}\sigma_{\mathrm{SF},r}^{(i{-}1)}$, $\sigma_{\mathrm{SSF},r}{=}\sigma_{\mathrm{SSF},r}^{(i{-}1)}$, and $\pi_{r}{=}\pi_{r}^{(i{-}1)}$, ${\forall}r{\in}\{1,2,3,{\dots},R\}$. Then, solve the following optimization problem:
+    \begin{align}\label{Algorithm_mean_ssf}
+        \underset{\Big\{\mu_{\mathrm{SSF},r}:r{=}1,2,3,{\dots},R\Big\}}{\mathrm{maximize}}\mathbb{E}\Bigg[\log g\left(\boldsymbol{\alpha}^{(i{-}1)},\boldsymbol{\beta}^{(i{-}1)},\boldsymbol{\sigma}_{\mathrm{SF}}^{(i{-}1)},\boldsymbol{\mu}_{\mathrm{SSF}},\boldsymbol{\sigma}_{\mathrm{SSF}}^{(i{-}1)},\boldsymbol{\pi}^{(i{-}1)}\right)\Bigg],
+    \end{align}
+    where $\boldsymbol{\mu}_{\mathrm{SSF}}{=}\left[\mu_{\mathrm{SSF},1},\mu_{\mathrm{SSF},2},\mu_{\mathrm{SSF},3},{\dots},\mu_{\mathrm{SSF},R}\right]$ is the optimization variable; while the other variables are fixed in this step of the algorithm $\boldsymbol{\alpha}{=}\boldsymbol{\alpha}^{(i{-}1)}{=}\left[\alpha_{1}^{(i{-}1)},\alpha_{2}^{(i{-}1)},\alpha_{3}^{(i{-}1)},{\dots},\alpha_{R}^{(i{-}1)}\right]$, $\boldsymbol{\beta}{=}\boldsymbol{\beta}^{(i{-}1)}{=}\left[\beta_{1}^{(i{-}1)},\beta_{2}^{(i{-}1)},\beta_{3}^{(i{-}1)},{\dots},\beta_{R}^{(i{-}1)}\right]$, $\boldsymbol{\sigma}_{\mathrm{SF}}{=}\boldsymbol{\sigma}_{\mathrm{SF}}^{(i{-}1)}{=}\left[\sigma_{\mathrm{SF},1}^{(i{-}1)},\sigma_{\mathrm{SF},2}^{(i{-}1)},\sigma_{\mathrm{SF},3}^{(i{-}1)},{\dots},\sigma_{\mathrm{SF},R}^{(i{-}1)}\right]$, \\$\boldsymbol{\sigma}_{\mathrm{SSF}}{=}\boldsymbol{\sigma}_{\mathrm{SSF}}^{(i{-}1)}{=}\left[\sigma_{\mathrm{SSF},1}^{(i{-}1)},\sigma_{\mathrm{SSF},2}^{(i{-}1)},\sigma_{\mathrm{SSF},3}^{(i{-}1)},{\dots},\sigma_{\mathrm{SSF},R}^{(i{-}1)}\right]$, and $\boldsymbol{\pi}{=}\boldsymbol{\pi}^{(i{-}1)}{=}\left[\pi_{1}^{(i{-}1)},\pi_{2}^{(i{-}1)},\pi_{3}^{(i{-}1)},{\dots},\pi_{R}^{(i{-}1)}\right]$.
+    \begin{align}
+        \text{To get }\mu_{\mathrm{SSF},r}^{(i)},{\forall}r{\in}\{1,2,3,{\dots},R\}:\ \frac{\partial}{\partial\mu_{\mathrm{SSF},r}}\mathbb{E}\Bigg[\log g\left(\boldsymbol{\alpha}^{(i{-}1)},\boldsymbol{\beta}^{(i{-}1)},\boldsymbol{\sigma}_{\mathrm{SF}}^{(i{-}1)},\boldsymbol{\mu}_{\mathrm{SSF}},\boldsymbol{\sigma}_{\mathrm{SSF}}^{(i{-}1)},\boldsymbol{\pi}^{(i{-}1)}\right)\Bigg]{=}0.\nonumber
+    \end{align}
+    \item To solve for $\Big\{\sigma_{\mathrm{SSF},r}:r{=}1,2,3,{\dots},R\Big\}$, fix all the other parameters in $\mathcal{B}^{(i{-}1)}$, i.e., $\alpha_{r}{=}\alpha_{r}^{(i{-}1)}$, $\beta_{r}{=}\beta_{r}^{(i{-}1)}$, $\sigma_{\mathrm{SF},r}{=}\sigma_{\mathrm{SF},r}^{(i{-}1)}$, $\mu_{\mathrm{SSF},r}{=}\mu_{\mathrm{SSF},r}^{(i{-}1)}$, and $\pi_{r}{=}\pi_{r}^{(i{-}1)}$, ${\forall}r{\in}\{1,2,3,{\dots},R\}$. Then, solve the following optimization problem:
+    \begin{align}\label{Algorithm_std_ssf}
+        \underset{\Big\{\sigma_{\mathrm{SSF},r}:r{=}1,2,3,{\dots},R\Big\}}{\mathrm{maximize}}\mathbb{E}\Bigg[\log g\left(\boldsymbol{\alpha}^{(i{-}1)},\boldsymbol{\beta}^{(i{-}1)},\boldsymbol{\sigma}_{\mathrm{SF}}^{(i{-}1)},\boldsymbol{\mu}_{\mathrm{SSF}}^{(i{-}1)},\boldsymbol{\sigma}_{\mathrm{SSF}},\boldsymbol{\pi}^{(i{-}1)}\right)\Bigg],
+    \end{align}
+    where $\boldsymbol{\sigma}_{\mathrm{SSF}}{=}\left[\sigma_{\mathrm{SSF},1},\sigma_{\mathrm{SSF},2},\sigma_{\mathrm{SSF},3},{\dots},\sigma_{\mathrm{SSF},R}\right]$ is the optimization variable; while the other variables are fixed in this step of the algorithm $\boldsymbol{\alpha}{=}\boldsymbol{\alpha}^{(i{-}1)}{=}\left[\alpha_{1}^{(i{-}1)},\alpha_{2}^{(i{-}1)},\alpha_{3}^{(i{-}1)},{\dots},\alpha_{R}^{(i{-}1)}\right]$, $\boldsymbol{\beta}{=}\boldsymbol{\beta}^{(i{-}1)}{=}\left[\beta_{1}^{(i{-}1)},\beta_{2}^{(i{-}1)},\beta_{3}^{(i{-}1)},{\dots},\beta_{R}^{(i{-}1)}\right]$, $\boldsymbol{\sigma}_{\mathrm{SF}}{=}\boldsymbol{\sigma}_{\mathrm{SF}}^{(i{-}1)}{=}\left[\sigma_{\mathrm{SF},1}^{(i{-}1)},\sigma_{\mathrm{SF},2}^{(i{-}1)},\sigma_{\mathrm{SF},3}^{(i{-}1)},{\dots},\sigma_{\mathrm{SF},R}^{(i{-}1)}\right]$, \\$\boldsymbol{\mu}_{\mathrm{SSF}}{=}\boldsymbol{\mu}_{\mathrm{SSF}}^{(i{-}1)}{=}\left[\mu_{\mathrm{SSF},1}^{(i{-}1)},\mu_{\mathrm{SSF},2}^{(i{-}1)},\mu_{\mathrm{SSF},3}^{(i{-}1)},{\dots},\mu_{\mathrm{SSF},R}^{(i{-}1)}\right]$, and $\boldsymbol{\pi}{=}\boldsymbol{\pi}^{(i{-}1)}{=}\left[\pi_{1}^{(i{-}1)},\pi_{2}^{(i{-}1)},\pi_{3}^{(i{-}1)},{\dots},\pi_{R}^{(i{-}1)}\right]$.
+    \begin{align}
+        \text{To get }\sigma_{\mathrm{SSF},r}^{(i)},{\forall}r{\in}\{1,2,3,{\dots},R\}:\ \frac{\partial}{\partial\sigma_{\mathrm{SSF},r}}\mathbb{E}\Bigg[\log g\left(\boldsymbol{\alpha}^{(i{-}1)},\boldsymbol{\beta}^{(i{-}1)},\boldsymbol{\sigma}_{\mathrm{SF}}^{(i{-}1)},\boldsymbol{\mu}_{\mathrm{SSF}}^{(i{-}1)},\boldsymbol{\sigma}_{\mathrm{SSF}},\boldsymbol{\pi}^{(i{-}1)}\right)\Bigg]{=}0.\nonumber
+    \end{align}
+    \item Finally, to solve for $\Big\{\pi_{r}:r{=}1,2,3,{\dots},R\Big\}$, fix all the other parameters in $\mathcal{B}^{(i{-}1)}$, i.e., $\alpha_{r}{=}\alpha_{r}^{(i{-}1)}$, $\beta_{r}{=}\beta_{r}^{(i{-}1)}$, $\sigma_{\mathrm{SF},r}{=}\sigma_{\mathrm{SF},r}^{(i{-}1)}$, $\mu_{\mathrm{SSF},r}{=}\mu_{\mathrm{SSF},r}^{(i{-}1)}$, and $\sigma_{\mathrm{SSF},r}{=}\sigma_{\mathrm{SSF},r}^{(i{-}1)}$.\\Then, solve the following Lagrangian problem:
+    \begin{align}\label{Pi_lagrangian}
+        \mathcal{L}\left(\mathbf{\pi},\varrho\middle|\mathcal{B}^{(i{-}1)}\right){\triangleq}\mathbb{E}\Bigg[\log g\left(\boldsymbol{\alpha}^{(i{-}1)},\boldsymbol{\beta}^{(i{-}1)},\boldsymbol{\sigma}_{\mathrm{SF}}^{(i{-}1)},\boldsymbol{\mu}_{\mathrm{SSF}}^{(i{-}1)},\boldsymbol{\sigma}_{\mathrm{SSF}}^{(i{-}1)},\boldsymbol{\pi}\right)\Bigg]{+}\varrho\left(\sum_{r{=}1}^{R}\pi_{r}{-}1\right).
+    \end{align}
+    This Lagrangian is solved by computing the solution to the following KKT conditions:
+    \begin{align}
+        \text{To get }\pi_{r}^{(i)},{\forall}r{\in}\{1,2,3,{\dots},R\}:\ \frac{\partial}{\partial\pi_{r}}\mathcal{L}\left(\mathbf{\pi},\varrho\middle|\mathcal{B}^{(i{-}1)}\right){=}0,\ \varrho\left(\sum_{r{=}1}^{R}\pi_{r}{-}1\right){=}0,\ \text{and }\varrho{\geq}0.\nonumber
+    \end{align}
+\end{itemize}
+
+\subsubsection{Termination}
+\begin{itemize}
+    \item Iterate through the steps detailed in the previous subsection ($i{=}1,2,3,{\dots}$) until the values of the parameters $\alpha_{r}$, $\beta_{r}$, $\sigma_{\mathrm{SF},r}$, $\mu_{\mathrm{SSF},r}$, $\sigma_{\mathrm{SSF},r}$, and $\pi_{r}$, ${\forall}r{\in}\{1,2,3,{\dots},R\}$ do not change above a pre-defined threshold between successive iterations.
+    \item Upon termination, we have a radio map consisting of our site partition as follows:
+    \begin{align}\label{Partition_summary}
+        &\mathcal{R}{=}\left\{\mathcal{R}_{1},\mathcal{R}_{2},\mathcal{R}_{3},{\dots},\mathcal{R}_{R}\right\},\text{ where}\\&\mathcal{R}_{r}{=}\Bigg\{\left(\alpha_{r},\beta_{r},\sigma_{\mathrm{SF},r},\mu_{\mathrm{SSF},r},\sigma_{\mathrm{SSF},r},\pi_{r},\left\{\mathbf{p}_{m}^{(l)},\mathbf{p}_{n}^{(l)},h_{mn}^{(l)}:\psi_{r}^{(l)}{=}1,l{=}1,2,3,{\dots},L\right\}\right),r{=}1,2,3,{\dots},R\Bigg\}.\nonumber
+    \end{align}
+    \item Each site partition $R_{r},r{\in}\{1,2,3,{\dots},R\}$ is represented by its characteristic channel parameters $\left(\alpha_{r},\beta_{r},\sigma_{\mathrm{SF},r},\mu_{\mathrm{SSF},r},\sigma_{\mathrm{SSF},r}\right)$ and the marginal probability of a GN-UAV position pair belonging to it (i.e., $\pi_{r}$)---along with measurement samples that belong to it, i.e., $\left\{\mathbf{p}_{m}^{(l)},\mathbf{p}_{n}^{(l)},h_{mn}^{(l)}:\psi_{r}^{(l)}{=}1,l{=}1,2,3,{\dots},L\right\}$.
+\end{itemize}
+
+\subsubsection{Reconstruction}
+\begin{itemize}
+    \item Upon completing the procedure outlined above, using KNN classification, we need to dynamically classify each \emph{new} GN-UAV positional pair where $\left(\mathbf{p}_{m},\mathbf{p}_{n}\right){\in}\mathcal{D}$ but $\left(\mathbf{p}_{m},\mathbf{p}_{n}\right){\notin}\mathcal{M}$, i.e., the GN-UAV positional pair is in the overall deployment site but not among the subset of positional pairs that constitute the ray-tracing measurements.
+    \item KNN classification:
+    \begin{itemize}
+        \item We define the index set of $S$-nearest neighbors of $\left(\mathbf{p}_{m},\mathbf{p}_{n}\right){\in}\mathcal{D}$ as follows:
+        \begin{align}\label{Neighbors}
+            \mathcal{S}\left(\mathbf{p}_{m},\mathbf{p}_{n}\right){=}\underset{\tilde{\mathcal{S}}{\subseteq}\{1,2,3,{\dots},L\}:|\tilde{\mathcal{S}}|{=}S}{\mathrm{argmin}}\ &\sum_{l{\in}\tilde{\mathcal{S}}}\Bigg[\norm{\mathbf{p}_{m}{-}\mathbf{p}_{m}^{(l)}}_{2}{+}\norm{\mathbf{p}_{n}{-}\mathbf{p}_{n}^{(l)}}_{2}\Bigg]\nonumber\\&\text{ subject to }R{<<}L\text{ and }S{<<}L.
+        \end{align}
+        \item Then, the site partition which $\left(\mathbf{p}_{m},\mathbf{p}_{n}\right){\in}\mathcal{D}$ belongs to is given by
+        \begin{align}\label{Classification}
+            &\hat{\boldsymbol{\psi}}\left(\mathbf{p}_{m},\mathbf{p}_{n}\right){=}\mu\sum_{l{\in}\mathcal{S}\left(\mathbf{p}_{m},\mathbf{p}_{n}\right)}\mathcal{K}\left(\mathbf{p}_{m},\mathbf{p}_{n},\mathbf{p}_{m}^{(l)},\mathbf{p}_{n}^{(l)}\right)\Bar{\boldsymbol{\psi}}^{(l)},\text{ where}\\
+            &\mathcal{K}\left(\mathbf{p}_{m},\mathbf{p}_{n},\mathbf{p}_{m}^{(l)},\mathbf{p}_{n}^{(l)}\right){\triangleq}\exp\left\{-\frac{\Bigg(\norm{\mathbf{p}_{m}{-}\mathbf{p}_{m}^{(l)}}_{2}{+}\norm{\mathbf{p}_{n}{-}\mathbf{p}_{n}^{(l)}}_{2}\Bigg)^{2}}{\varphi}\right\}\text{ is the kernel function,}\nonumber\\&\varphi{>}0\text{ is the kernel parameter, and }\mu{>}0\text{ is chosen such that }\sum_{r{=}1}^{R}\hat{\psi}_{r}\left(\mathbf{p}_{m},\mathbf{p}_{n}\right){=}1.\nonumber
+        \end{align}
+    \end{itemize}
+    \item Lastly, we get the channel gain (in dB) for this \emph{new} or \emph{unseen} GN-UAV positional pair $\left(\mathbf{p}_{m},\mathbf{p}_{n}\right){\in}\mathcal{D}$ as follows:
+    \begin{align}\label{Reconstruction}
+        \hat{h}_{mn}\left(\mathbf{p}_{m},\mathbf{p}_{n}\right){=}\sum_{r{=}1}^{R}\Big(\beta_{r}{-}10\alpha_{r}\log_{10}d_{mn}{+}\xi_{r}{+}\lambda_{r}\Big)\hat{\psi}_{r}\left(\mathbf{p}_{m},\mathbf{p}_{n}\right),
+    \end{align}
+    where $d_{mn}{=}\norm{\mathbf{p}_{m}{-}\mathbf{p}_{n}}_{2}$, $\xi_{r}{\sim}\mathcal{N}\left(0,\sigma_{\mathrm{SF},r}^{2}\right)$, and $\lambda_{r}{\sim}\mathcal{CN}\left(\mu_{\mathrm{SSF},r},\sigma_{\mathrm{SSF},r}\right)$.
+\end{itemize}
+
+\section{Solution: DPDP solved via Hierarchical RL}
+\subsection{Problem setup}
+\begin{itemize}
+    \item Let $\zeta$ be the fleet orchestration policy that defines the GN request scheduling \& UAV association mechanism, the corresponding UAV positioning along with its constituent energy-conscious $3$D trajectory, and the re-charging strategy for the UAVs considering long-term network dynamics.
+    \item Here, in this formulation, we assume that the GN requests (which are generated as per a Poisson arrival process with rate $\Lambda$ [requests per unit time]) are \emph{cached} in a request buffer at the centralized operations hub, and \emph{released} in batches for them to be served by the fleet. This fits into our Hierarchical Reinforcement Learning (HRL) formulation, discussed later in this section.
+    \item First, we define a \emph{policy interval} as the mission time-interval between the UAVs in the \emph{idle phase} waiting for the batch of requests to be released, the UAVs entering the \emph{service phase}, i.e., starting to serve their assigned requests, the UAVs completing the \emph{service phase} after fully servicing their assigned requests, and the UAVs re-entering the \emph{idle phase} waiting for the next batch of requests to be released.
+    \item Let $\Delta_{\eta}$ be the duration of the $\eta^{\mathrm{th}}$ policy interval, $\eta{\in}\{1,2,3,{\dots}\}$. Let $E_{u,\eta}$ be the mobility energy consumption of UAV $u{\in}\mathcal{U}$ in this policy interval.
+    \item Under the GN request model described earlier in this document, we define the average per-UAV reward under this policy $\zeta$ as follows:
+    \begin{align}\label{Average_reward}
+        \Bar{\Omega}_{\zeta}{\triangleq}\underset{\eta{\rightarrow}\infty}{\mathrm{lim}}\mathbb{E}\Bigg[\frac{1}{U(\eta{-}1)}\sum_{\iota{=}1}^{\eta{-}1}\sum_{g{\in}\mathcal{G}_{\iota}}\sum_{u{=}1}^{U}\vartheta_{gu,\iota}\Omega_{gu,\iota}\Bigg],
+    \end{align}
+    where $\mathcal{G}_{\iota}$ is the set of GNs whose requests have been \emph{released} in policy interval $\iota$; $\vartheta_{gu,\iota}{\in}\{0,1\}$ is a binary variable denoting if the request from $g{\in}\mathcal{G}_{\iota}$ is assigned to UAV $u{\in}\mathcal{U}$; and $\Omega_{gu,\iota}{=}\chi_{g}\gamma_{g}^{\left(\delta_{gu,\iota}{-}\delta_{g,\mathrm{max}}\right)}$ is the reward obtained by UAV $u{\in}\mathcal{U}$ for serving a request from GN $g{\in}\mathcal{G}_{\iota}$ in $\delta_{gu,\iota}$ time---with the request priority value being $\chi_{g}$, the maximum latency being $\delta_{g,\mathrm{max}}$, the data payload size being $\nu_{g}$, and the post-deadline discount factor being $\gamma_{g}$.
+    \item Similarly, under the UAV energy model outlined earlier in this document, we define the average per-UAV energy consumption under this policy $\zeta$ as follows:
+    \begin{align}\label{Average_energy}
+        \Bar{E}_{\zeta}{\triangleq}\underset{\eta{\rightarrow}\infty}{\mathrm{lim}}\mathbb{E}\Bigg[\frac{1}{U(\eta{-}1)}\sum_{\iota{=}1}^{\eta{-}1}\sum_{u{=}1}^{U}\Big[E_{u,\iota}{-}\Xi_{u,\iota}\tau_{u,\mathrm{chrg},\iota}\Upsilon_{u}\Big]\Bigg],
+    \end{align}
+    where $E_{u,\iota}$ is the energy consumed by UAV $u{\in}\mathcal{U}$ in policy interval $\iota$; $\Xi_{u,\iota}{\in}\{0,1\}$ is a binary variable denoting if the UAV $u{\in}\mathcal{U}$ is sent into the depot for charging in this policy interval $\iota$; $\tau_{u,\mathrm{chrg},\iota}$ is the amount of time spent charging by UAV $u{\in}\mathcal{U}$ in policy interval $\iota$; and $\Upsilon_{u}$ is the charge rate for UAV $u{\in}\mathcal{U}$, i.e., the rate at which energy is delivered to the UAV's battery by the charging stations at the depot.
+    \item Let the set containing all the information pertaining to the UAV fleet be defined as
+    \begin{align*}
+        \mathcal{I}_{U}{\triangleq}\Bigg\{\mathcal{U},\left\{A_{u}\right\}_{u{\in}\mathcal{U}},\left\{E_{u,\mathrm{min}},E_{u,\mathrm{avg}},E_{u,\mathrm{max}}\right\}_{u{\in}\mathcal{U}},\left\{v_{u,\mathrm{min}},v_{u,\mathrm{max}},a_{u,\mathrm{min}},a_{u,\mathrm{max}}\right\}_{u{\in}\mathcal{U}},\left\{\Upsilon_{u}\right\}_{u{\in}\mathcal{U}}\Bigg\}.
+    \end{align*}
+    \item Let the set containing all the information pertaining to the GNs be defined as
+    \begin{align*}
+        \mathcal{I}_{G}{\triangleq}\Bigg\{\mathcal{G},\left\{A_{g}\right\}_{g{\in}\mathcal{G}},\left\{\mathbf{p}_{g}\right\}_{g{\in}\mathcal{G}}\Bigg\}.
+    \end{align*}
+    \item Let the complete set of channel parameters for the site partitions (and their associated marginal probabilities), obtained via the ray-tracing augmented channel estimation procedure detailed earlier in this document, be defined as follows:
+    \begin{align*}
+        \mathcal{B}^{*}{\triangleq}\Bigg\{\left(\alpha_{r}^{*},\beta_{r}^{*},\sigma_{\mathrm{SF},r}^{*},\mu_{\mathrm{SSF},r}^{*},\sigma_{\mathrm{SSF},r}^{*},\pi_{r}^{*}\right):r{=}1,2,3,{\dots},R\Bigg\}.
+    \end{align*}
+\end{itemize}
+
+\subsection{Optimization problem}
+\begin{align}
+    \textbf{(P.0)}\ \ \ &\underset{\zeta}{\mathrm{maximize}}\ \Bar{\Omega}_{\zeta}\left(\mathcal{I}_{U},\mathcal{I}_{G},\mathcal{B}^{*}\right)\nonumber\\
+    &\text{subject to }\Bar{E}_{\zeta}\left(\mathcal{I}_{U},\mathcal{I}_{G},\mathcal{B}^{*}\right){\leq}\frac{1}{U}\sum_{u{=}1}^{U}E_{u,\mathrm{avg}}\label{Avg_energy_constraint}\tag{C.1}\\\nonumber\\
+    &0{\leq}x{\leq}x_{\mathrm{max}},\ 0{\leq}y{\leq}y_{\mathrm{max}},\ 0{\leq}z{\leq}z_{\mathrm{max}};\ \Delta_{x}{>}0,\ \Delta_{y}{>}0,\ \Delta_{z}{>}0\label{Grid_tessellation_constraint}\tag{C.2}\\\nonumber\\
+    &|\mathcal{U}|{=}U\text{ (fixed)};\ |\mathcal{G}|{=}G\text{ (fixed)};\ \mathcal{B}^{*}\text{ (pre-determined)}\label{Fixed_deployment_constraints}\tag{C.3}\\\nonumber\\
+    &\mathbf{p}_{u}(0){\in}\mathcal{F}\text{ (depot)};\ \mathbf{p}_{u_{1}}(t){\neq}\mathbf{p}_{u_{2}}(t)\text{ (collision-avoidance)};\ \mathbf{p}_{u}(t){\notin}\mathcal{Z}\text{ (NFZs)};\nonumber\\
+    &{\forall}u,u_{1},u_{2}{\in}\mathcal{U},\ u_{1}{\neq}u_{2},\ {\forall}t{\in}\left[t_{u,\mathrm{init},\eta},t_{u,\mathrm{term},\eta}\right],\ {\forall}\eta{\in}\{1,2,3,{\dots}\}\label{UAV_deployment_constraints}\tag{C.4}\\\nonumber\\
+    &\mathbf{p}_{g}(t){=}\mathbf{p}_{g}\text{ (fixed)},\ {\forall}g{\in}\mathcal{G},\ {\forall}t{\in}\left[t_{u,\mathrm{init},\eta},t_{u,\mathrm{term},\eta}\right],\ {\forall}\eta{\in}\{1,2,3,{\dots}\}\label{GN_deployment_constraints}\tag{C.5}\\\nonumber\\
+    &v_{u,\mathrm{min}}{\leq}v_{u,\mathrm{horz}}(t){\leq}v_{u,\mathrm{max}},\ v_{u,\mathrm{min}}{\leq}v_{u,\mathrm{vert}}(t){\leq}v_{u,\mathrm{max}};\nonumber\\
+    &a_{u,\mathrm{min}}{\leq}a_{u,\mathrm{horz}}(t){\leq}a_{u,\mathrm{max}},\ a_{u,\mathrm{min}}{\leq}a_{u,\mathrm{vert}}(t){\leq}a_{u,\mathrm{max}};\nonumber\\
+    &{\forall}u{\in}\mathcal{U},\ {\forall}t{\in}\left[t_{u,\mathrm{init},\eta},t_{u,\mathrm{term},\eta}\right],\ {\forall}\eta{\in}\{1,2,3,{\dots}\}\label{UAV_motion_constraints}\tag{C.6}\\\nonumber\\
+    &\vartheta_{gu,\eta}{\in}\{0,1\};\ \sum_{u{=}1}^{U}\vartheta_{gu,\eta}{=}1;\ {\forall}u{\in}\mathcal{U},\ {\forall}g{\in}\mathcal{G}_{\eta},\ \mathcal{G}_{\eta}{\subseteq}\mathcal{G},\ {\forall}\eta{\in}\{1,2,3,{\dots}\}\label{GN_scheduling_and_association_constraints}\tag{C.7}\\\nonumber\\
+    &0{\leq}\sum_{g{\in}\mathcal{G}_{\eta}}\vartheta_{gu,\eta}{\leq}|\mathcal{G}_{\eta}|,\ {\forall}u{\in}\mathcal{U},\ \mathcal{G}_{\eta}{\subseteq}\mathcal{G},\ {\forall}\eta{\in}\{1,2,3,{\dots}\}\label{Simultaneous_GN_services}\tag{C.8}\\\nonumber\\
+    &\int_{t_{u,\mathrm{init},\eta}}^{t_{u,\mathrm{term},\eta}}R_{gu}\Big(\mathbf{p}_{u}(t),\mathbf{p}_{g},\mathcal{B}^{*},\boldsymbol{\Phi}_{g}(t)\Big)dt{\geq}\nu_{g};\nonumber\\
+    &{\forall}u{\in}\mathcal{U},\ {\forall}g{\in}\mathcal{G}_{\eta}\text{ s.t. }\vartheta_{gu,\eta}{=}1,\ \mathcal{G}_{\eta}{\subseteq}\mathcal{G},\ {\forall}\eta{\in}\{1,2,3,{\dots}\}\label{Full_GN_service}\tag{C.9}\\\nonumber\\
+    &\Xi_{u,\eta}{\in}\{0,1\};\ 0{<}\tau_{u,\mathrm{chrg},\eta}{<}\Delta_{\eta};\ \Upsilon_{u,\eta}{=}\Upsilon_{u}\text{ (fixed)};\nonumber\\
+    &E_{u,\mathrm{min}}{\leq}E_{u,\mathrm{rem}}(t){\leq}E_{u,\mathrm{max}};\ E_{u,\mathrm{min}}{\leq}E_{u,\eta}{-}\Xi_{u,\eta}\tau_{u,\mathrm{chrg},\eta}\Upsilon_{u}{\leq}E_{u,\mathrm{max}};\nonumber\\
+    &{\forall}u{\in}\mathcal{U},\ {\forall}t{\in}\left[t_{u,\mathrm{init},\eta},t_{u,\mathrm{term},\eta}\right],\ {\forall}\eta{\in}\{1,2,3,{\dots}\}.\label{Charging_and_UAV_energy_constraints}\tag{C.10}
+\end{align}
+
+\subsection{DPDP formulation via HRL}
+\begin{itemize}
+    \item The Lagrangian for problem $\textbf{(P.0)}$ is
+    \begin{align}\label{Summarized_optimization_problem}
+         \textbf{(L.0)}\ &\underset{\zeta}{\mathrm{maximize}}\ \Bar{\Omega}_{\zeta}\left(\mathcal{I}_{U},\mathcal{I}_{G},\mathcal{B}^{*}\right){+}\epsilon\Big(\Bar{E}_{\zeta}\left(\mathcal{I}_{U},\mathcal{I}_{G},\mathcal{B}^{*}\right){-}\frac{1}{U}\sum_{u{=}1}^{U}E_{u,\mathrm{avg}}\Big)\nonumber\\
+         &\text{subject to constraints }\mathrm{C.2-C.10}\text{ and }\epsilon{\geq}0\text{ (dual variable)}.
+    \end{align}
+    \item This problem can be approached as a Dynamic Pickup and Delivery Problem (DPDP) wherein the GN requests (generated according to a Poisson arrival process) are \emph{cached} and \emph{released} dynamically: this \emph{cache-and-release} is optimized via a Deep Q-Network (DQN). Subsequently, when a batch of GN requests is \emph{released}, the resultant problem is a Static Pickup and Delivery Problem (Static PDP), solved via a Cross-Layer Multiple Traveling Salesman Problem (MTSP) approach.
+    \item This two-stage process can be modeled with a Hierarchical Reinforcement Learning (HRL) construction, i.e., the \emph{cache-and-release} process is optimized by an Upper Agent (UA) involving a DQN, while the resultant Static PDP is solved via a Cross-Layer Multiple Traveling Salesman Problem (MTSP) approach.
+\end{itemize}
+
+\subsubsection{Upper Agent (UA)}
+The Markov Decision Process (MDP) underlying the operations of the Upper Agent (UA) in our DPDP HRL formulation involves the following states, actions, rewards, and solution process.
+\begin{itemize}
+    \item \underline{State}: $s_{\mathrm{UA}}{\triangleq}\Big[N_{\mathrm{cache}},N_{\mathrm{UAVs}},\mathcal{J}_{U},\mathcal{J}_{G}\Big]$, where $N_{\mathrm{cache}}$ is the number of requests in the cache (i.e., request buffer), $N_{\mathrm{UAVs}}$ is the number of available vehicles, $\mathcal{J}_{U}$ is the set containing all the information pertaining to the available UAVs (i.e., their positions \& trajectories and their remaining energies), and $\mathcal{J}_{G}$ is the set containing information pertaining to the GN requests cached in the buffer (i.e., the GN positions and the request headers).
+    \item \underline{Action}: $a_{\mathrm{UA}}{\in}\{0,1\}$ is a binary variable indicating whether the agent should continue to cache requests ($a_{\mathrm{UA}}{=}0$) or if the agent should release all the requests in the current buffer ($a_{\mathrm{UA}}{=}1$).
+    \item If the requests in the cache are not released, the \underline{reward} for the upper agent is $0$, i.e., $r_{\mathrm{UA}}{=}0$; else, if all the requests in the current buffer are released, the resultant static PDP in policy interval $\eta$ is solved by the Lower Agent (LA) via a cross-layer MTSP approach (policy $\zeta_{\mathrm{LA}}$) to get a reward
+    \begin{align}\label{Reward_lower_agent}
+        r_{\mathrm{UA}}{=}&\Bar{\Omega}_{\zeta_{\mathrm{LA}}}\left(\mathcal{I}_{U},\mathcal{I}_{G},\mathcal{B}^{*},\mathcal{J}_{U,\eta},\mathcal{J}_{G,\eta}\right){+}\\&\epsilon\Bigg(\Bar{E}_{\zeta_{\mathrm{LA}}}\left(\mathcal{I}_{U},\mathcal{I}_{G},\mathcal{B}^{*},\mathcal{J}_{U,\eta},\mathcal{J}_{G,\eta}\right){-}\frac{1}{U}\sum_{u{=}1}^{U}E_{u,\mathrm{avg}}\Bigg)\nonumber
+    \end{align}
+    \item This MDP's \underline{solution process} involves the use of a DQN to optimize the Temporal Difference (TD) cost function:
+    \begin{align}\label{TD_problem}
+        &\mathcal{L}_{\mathrm{UA}}\left(\Theta_{\mathrm{UA},i}\right){=}\\&\underset{\left(s_{\mathrm{UA}},a_{\mathrm{UA}},r_{\mathrm{UA}},s_{\mathrm{UA}}'\right){\sim}\mathrm{U}(\mathcal{E})}{\mathbb{E}}\Bigg[\Bigg(r_{\mathrm{UA}}{+}\gamma_{\mathrm{UA}}\underset{a_{\mathrm{UA}}'}{\mathrm{max}}\Big\{Q\big(s_{\mathrm{UA}}',a_{\mathrm{UA}}';\Theta_{\mathrm{UA},i}^{-}\big){-}Q\big(s_{\mathrm{UA}},a_{\mathrm{UA}};\Theta_{\mathrm{UA},i}\big)\Big\}\Bigg)^{2}\Bigg],\nonumber
+    \end{align}
+    where $\Theta_{\mathrm{UA},i}$ denotes the Q-network parameters in training iteration $i$, $\Theta_{\mathrm{UA},i}^{-}$ denotes the target network parameters in training iteration $i$, $\mathrm{U}(\mathcal{E})$ denotes uniformly sampling experiences from the replay buffer ($\mathcal{E}$), and $\gamma_{\mathrm{UA}}$ is the UA's discount factor for this learning process.
+\end{itemize}
+
+\subsubsection{Lower Agent (LA)}
+Upon releasing all the requests in the cache, in policy interval $\eta$, the Lower Agent (LA) solution process involves employing a cross-layer MTSP approach to solve the resultant static PDP, and thus obtain the reward for that policy interval: see our ICC Workshops $2024$ paper for more detail on the LA's operations.
+
+\end{document}
