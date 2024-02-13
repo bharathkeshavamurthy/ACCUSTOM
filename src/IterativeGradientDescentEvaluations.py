@@ -132,7 +132,7 @@ def energy_2(_vs, _as):
     _c_0, _c_1, __c_2, _c_3, _c_4 = _p_0, 3 / (_u_tip ** 2), _p_1, 2 * (_v_0 ** 2), _p_2
 
     _kappa = lambda _v, _a: (1 + ((((rho * _r_fdr * _f_sl * _dsc_area * (_v ** 2)) +
-                                    (2 * wgt_uav * _a)) ** 2) / (4 * (wgt_uav ** 2)))) ** 0.5
+                                    (2 * _mass_uav * _a)) ** 2) / (4 * (wgt_uav ** 2)))) ** 0.5
 
     ''' Split individual terms from the energy equation '''
 
@@ -154,7 +154,8 @@ def energy_3(_vs, _as):
     IEEE Wireless Communications Letters, vol. 10, no. 9, pp. 2009-2012, Sept. 2021.
     """
     # Primary constants for a rotary-wing UAV
-    _dsc_area, _f_sl, _ang_vel = pi * (rtr_rad ** 2), (n_bld * bld_len) / (pi * rtr_rad), rpm * ((2 * pi) / 60)
+    _dsc_area, _f_sl = pi * (rtr_rad ** 2), (n_bld * bld_len) / (pi * rtr_rad)
+    _mass_uav, _ang_vel = wgt_uav / g, rpm * ((2 * pi) / 60)
 
     # Secondary constants for a rotary-wing UAV
     _u_tip, _v_0 = _ang_vel * rtr_rad, (wgt_uav / (2 * rho * _dsc_area)) ** 0.5
@@ -170,7 +171,7 @@ def energy_3(_vs, _as):
     _c_0, _c_1, __c_2, _c_3 = _p_0, 3 / (_u_tip ** 2), _p_1, 2 * (_v_0 ** 2)
 
     _kappa = lambda _v, _a: (1 + ((((rho * _r_fdr * _f_sl * _dsc_area * (_v ** 2)) +
-                                    (2 * wgt_uav * _a)) ** 2) / (4 * (wgt_uav ** 2)))) ** 0.5
+                                    (2 * _mass_uav * _a)) ** 2) / (4 * (wgt_uav ** 2)))) ** 0.5
 
     ''' Split individual terms from the energy equation '''
 

@@ -35,7 +35,7 @@ CONFIGURATIONS
 # Simulation setup (MKS/SI units)
 pi, v_min, v_stp, v_max, v_h_min, v_h_max, v_v_min, v_v_max, v_std, sz = np.pi, 0, 0.1, 50, 0, 50, 0, 50, 2.5, 32
 r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0302, 8, 0.0157, 5730
-g, wgt_uav, v_mul, m_sg, a_h_min, a_h_max, a_v_min, a_v_max, po = constants.g, 80, 1 / np.sqrt(2), 256, -5, 5, -5, 5, 4
+g, wgt_uav, v_mul, m_sg, a_h_min, a_h_max, a_v_min, a_v_max, po = constants.g, 80, 1 / np.sqrt(2), 128, -5, 5, -5, 5, 4
 # r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0151, 4, 0.0157, 2865
 
 """
@@ -94,7 +94,7 @@ def energy_2(_vs, _as):
     _c_0, _c_1, __c_2, _c_3, _c_4 = _p_0, 3 / (_u_tip ** 2), _p_1, 2 * (_v_0 ** 2), _p_2
 
     _kappa = lambda _v, _a: (1 + ((((rho * _r_fdr * _f_sl * _dsc_area * (_v ** 2)) +
-                                    (2 * wgt_uav * _a)) ** 2) / (4 * (wgt_uav ** 2)))) ** 0.5
+                                    (2 * _mass_uav * _a)) ** 2) / (4 * (wgt_uav ** 2)))) ** 0.5
 
     ''' Split individual terms from the energy equation '''
 
@@ -116,7 +116,8 @@ def energy_3(_vs, _as):
     IEEE Wireless Communications Letters, vol. 10, no. 9, pp. 2009-2012, Sept. 2021.
     """
     # Primary constants for a rotary-wing UAV
-    _dsc_area, _f_sl, _ang_vel = pi * (rtr_rad ** 2), (n_bld * bld_len) / (pi * rtr_rad), rpm * ((2 * pi) / 60)
+    _dsc_area, _f_sl = pi * (rtr_rad ** 2), (n_bld * bld_len) / (pi * rtr_rad)
+    _mass_uav, _ang_vel = wgt_uav / g, rpm * ((2 * pi) / 60)
 
     # Secondary constants for a rotary-wing UAV
     _u_tip, _v_0 = _ang_vel * rtr_rad, (wgt_uav / (2 * rho * _dsc_area)) ** 0.5
@@ -132,7 +133,7 @@ def energy_3(_vs, _as):
     _c_0, _c_1, __c_2, _c_3 = _p_0, 3 / (_u_tip ** 2), _p_1, 2 * (_v_0 ** 2)
 
     _kappa = lambda _v, _a: (1 + ((((rho * _r_fdr * _f_sl * _dsc_area * (_v ** 2)) +
-                                    (2 * wgt_uav * _a)) ** 2) / (4 * (wgt_uav ** 2)))) ** 0.5
+                                    (2 * _mass_uav * _a)) ** 2) / (4 * (wgt_uav ** 2)))) ** 0.5
 
     ''' Split individual terms from the energy equation '''
 
@@ -151,25 +152,19 @@ CORE OPERATIONS
 e_vels = np.arange(start=v_min, stop=v_max + v_stp, step=v_stp)
 vels_dict, horz_vels_dict, f_horz_vels_dict, f_vert_vels_dict = {}, {}, {}, {}
 accs_dict, horz_accs_dict, f_horz_accs_dict, f_vert_accs_dict = {}, {}, {}, {}
-# vels_dict, horz_vels_dict, vert_vels_dict, f_horz_vels_dict, f_vert_vels_dict = {}, {}, {}, {}, {}
-# accs_dict, horz_accs_dict, vert_accs_dict, f_horz_accs_dict, f_vert_accs_dict = {}, {}, {}, {}, {}
 
 for e_vel in e_vels:
     vels = stats.truncnorm((v_min - e_vel) / v_std, (v_max - e_vel) / v_std, loc=e_vel, scale=v_std)
     horz_vels = stats.truncnorm((v_h_min - e_vel) / v_std, (v_h_max - e_vel) / v_std, loc=e_vel, scale=v_std)
-    # vert_vels = stats.truncnorm((v_v_min - e_vel) / v_std, (v_v_max - e_vel) / v_std, loc=e_vel, scale=v_std)
 
     vels_dict[e_vel] = [_ for _ in np.array(vels.rvs(m_sg))]
     horz_vels_dict[e_vel] = [_ for _ in np.array(horz_vels.rvs(m_sg))]
-    # vert_vels_dict[e_vel] = [_ for _ in np.array(vert_vels.rvs(m_sg))]
+
     f_horz_vels_dict[e_vel] = [_ for _ in np.clip(v_mul * np.array(vels.rvs(m_sg)), v_h_min, v_h_max)]
     f_vert_vels_dict[e_vel] = [_ for _ in np.clip(v_mul * np.array(vels.rvs(m_sg)), v_v_min, v_v_max)]
 
 horz_accs_dict = {_k: np.clip(np.pad(np.diff(_v), (1, 0), mode='constant',
                                      constant_values=0), a_h_min, a_h_max) for _k, _v in horz_vels_dict.items()}
-
-# vert_accs_dict = {_k: np.clip(np.pad(np.diff(_v), (1, 0), mode='constant',
-#                                      constant_values=0), a_v_min, a_v_max) for _k, _v in vert_vels_dict.items()}
 
 f_horz_accs_dict = {_k: np.clip(np.pad(np.diff(_v), (1, 0), mode='constant',
                                        constant_values=0), a_h_min, a_h_max) for _k, _v in f_horz_vels_dict.items()}
@@ -188,16 +183,6 @@ s_horz_trace = go.Scatter(mode='lines+markers', x=e_vels,
                           y=sgnl.savgol_filter([energy_2(horz_vels_dict[_e_vel],
                                                          horz_accs_dict[_e_vel]) / m_sg for _e_vel in e_vels], sz, po))
 
-'''
-vert_trace = go.Scatter(name='2D Non-Inertial (Vert. Accelerations) Trajectory', mode='lines+markers', x=e_vels,
-                        y=[energy_3(vert_vels_dict[_e_vel], vert_accs_dict[_e_vel]) / m_sg for _e_vel in e_vels])
-
-s_vert_trace = go.Scatter(mode='lines+markers', x=e_vels,
-                          name='2D Non-Inertial (Vert. Accelerations) Trajectory (Smoothed)',
-                          y=sgnl.savgol_filter([energy_3(vert_vels_dict[_e_vel],
-                                                         vert_accs_dict[_e_vel]) / m_sg for _e_vel in e_vels], sz, po))
-'''
-
 f_trace = go.Scatter(mode='lines+markers', x=e_vels,
                      y=[(energy_2(f_horz_vels_dict[_e_vel], f_horz_accs_dict[_e_vel])
                          + energy_3(f_vert_vels_dict[_e_vel], f_vert_accs_dict[_e_vel]))
@@ -213,6 +198,3 @@ e_layout = dict(title='Rotary-Wing UAV Mobility Power Analysis',
                 yaxis=dict(title='UAV Mobility Power Consumption in Watts', type='log', autorange=True))
 
 plotly.plotly.plot(dict(data=[cnst_trace, horz_trace, s_horz_trace, f_trace, s_f_trace], layout=e_layout))
-
-# plotly.plotly.plot(dict(data=[cnst_trace, horz_trace, s_horz_trace,
-#                               vert_trace, s_vert_trace, f_trace, s_f_trace], layout=e_layout))
