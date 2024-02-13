@@ -16,7 +16,7 @@ DEPLOYMENT MECHANISM:
 REPORTED METRICS:
     a. Total Cumulative Fleet-wide Reward (vs configurable Number of UAVs);
     b. Total Cumulative Fleet-wide Reward (vs configurable Number of Users/GNs);
-    c. Total Cumulative Fleet-wide Reward and (vs) Average Per-UAV Energy Consumption.
+    c. Total Cumulative Fleet-wide Reward and (vs) Average Per-UAV 3D Mobility Power Consumption.
 
 Author: Bharath Keshavamurthy <bkeshav1@asu.edu>
 Organization: School of Electrical, Computer and Energy Engineering, Arizona State University, Tempe, AZ.
@@ -57,7 +57,7 @@ watts_db, watts_dbm = lambda _x: 10 * np.log10(_x), lambda _x: 10 * np.log10(_x)
 temp, k_1, k_2, z_1, z_2, alpha, alpha_, kappa, bw = 300, 1, np.log(100) / 90, 9.61, 0.16, 2, 2.8, 0.2, 5e6
 g, wgt_uav, tx_p, beta_0, w_var = constants.g, 80, dbm_watts(23), db_watts(20), constants.Boltzmann * temp * bw
 r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0302, 8, 0.0157, 5730
-n_u, n_g, n_c, n_a_u, n_a_g, v_min, v_stp, v_max, v_p_min, v_h_max, v_v_max = 6, 36, 6, 16, 4, 0, 0.1, 50, 20.1, 50, 50
+n_u, n_g, n_c, n_a_u, n_a_g, v_min, v_stp, v_max, v_p_min, v_h_max, v_v_max = 6, 36, 6, 16, 4, 0, 0.1, 50, 16.8, 50, 50
 pi, eps, t_max, x_max, y_max, z_max, x_d, y_d, z_d, h_g, h_u = np.pi, 0.1, 3000, 3000, 3000, 150, 10, 10, 10, None, None
 # r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0151, 4, 0.0157, 2865
 
@@ -231,7 +231,7 @@ def comm_link(_gn, _uav):
     """
     Render the GN-UAV link in the MU-MIMO paradigm (with ZF receive beam-forming and receiver thermal noise)
     """
-    _a_gu = np.clip(rad2deg(angle(_gn['voxel'], _uav['serv_voxel'])), 0, 89.9)
+    _a_gu = np.clip(rad2deg(angle(_gn['voxel'], _uav['serv_voxel'])), 0.01, 89.99)
     _p_los = 1 / (z_1 * np.exp(-z_2 * (_a_gu - z_1)))
 
     _w_vector = np.random.multivariate_normal(np.zeros(2), 0.5 * w_var * np.eye(2), size=n_a_u).view(np.complex128)
@@ -259,18 +259,18 @@ CORE OPERATIONS
 print('[INFO] RxPowerVoronoiEvaluations core_operations: Setting up the simulation for an Rx pwr. Voronoi deployment!')
 
 # Heights of the UAVs and the GNs
-h_g = z_d / 2 if h_g is None else h_g
 h_u = z_max - (z_d / 2) if h_u is None else h_u
+h_g = z_d / 2 if h_g is None else h_g
 
 # Assertions for model validations...
 assert x_max % x_d == 0 and y_max % y_d == 0 and z_max % z_d == 0, 'Potential error in given grid tessellation!'
 assert h_u != 0 and h_g != 0 and 0 < h_u < z_max and 0 < h_g < z_max, 'Unsupported or Impractical height values!'
 assert sum([_f['n'] for _f in traffic.values()]) == n_g, 'Traffic QoS does not match the script simulation setup!'
-assert int(energy_1(v_min)) == 1985 and int(energy_1(v_p_min)) == 1734, 'Potential error in energy_1 computation!'
+assert int(energy_1(v_min)) == 1985 and int(energy_1(v_p_min)) == 1714, 'Potential error in energy_1 computation!'
 assert n_c == n_u, 'The number of UAVs should be equal to the number of GN clusters for this static UAV deployment!'
 assert h_u % (z_d / 2) == 0 and h_g % (z_d / 2) == 0, 'Height values do not adhere to the current grid tessellation!'
-assert int(energy_2([v_min], [0])) == 1985 and int(energy_2([v_p_min], [0])) == 1736, 'Error in energy_2 computation!'
-assert int(energy_3([v_min], [0])) == 1985 and int(energy_3([v_p_min], [0])) == 1586, 'Error in energy_3 computation!'
+assert int(energy_2([v_min], [0])) == 1985 and int(energy_2([v_p_min], [0])) == 1716, 'Error in energy_2 computation!'
+assert int(energy_3([v_min], [0])) == 1985 and int(energy_3([v_p_min], [0])) == 1628, 'Error in energy_3 computation!'
 
 # Deployment model parameters
 print('[INFO] RxPowerVoronoiEvaluations core_operations: Deployment model parameters in this simulation are - '

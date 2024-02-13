@@ -25,7 +25,7 @@ DEPLOYMENT MECHANISM:
 REPORTED METRICS:
     a. Total Cumulative Fleet-wide Reward (vs configurable Number of UAVs);
     b. Total Cumulative Fleet-wide Reward (vs configurable Number of Users/GNs);
-    c. Total Cumulative Fleet-wide Reward and (vs) Average Per-UAV Energy Consumption.
+    c. Total Cumulative Fleet-wide Reward and (vs) Average Per-UAV 3D Mobility Power Consumption.
 
 Author: Bharath Keshavamurthy <bkeshav1@asu.edu>
 Organization: School of Electrical, Computer and Energy Engineering, Arizona State University, Tempe, AZ.
@@ -78,13 +78,13 @@ watts_db, watts_dbm = lambda _x: 10 * np.log10(_x), lambda _x: 10 * np.log10(_x)
 
 # Simulation setup (MKS/SI units)
 # TO-DO Config | Core analysis variables: Number of UAVs, Number of GNs, and P_avg
+n_w, m_sg, m_sg_ip, n_sw, omega, pwr_avg, n_ss = 1024, 62, 2, 189, 1, np.linspace(1.8e3, 3.6e3, 9)[0], 21
 v_h_max, t_min, t_max, x_max, y_max, z_max, x_d, y_d, z_d, h_g = 50, 300, 3000, 3000, 3000, 150, 10, 10, 10, None
-n_w, m_sg, m_sg_ip, n_sw, omega, pwr_avg, n_ss = 1024, 62, 2, 189, 1, np.linspace(start=2e3, stop=5e3, num=9)[0], 21
 pi, temp, k_1, k_2, z_1, z_2, alpha, alpha_, kappa, bw = np.pi, 300, 1, np.log(100) / 90, 9.61, 0.16, 2, 2.8, 0.2, 5e6
 r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0302, 8, 0.0157, 5730
 v_v_max, ss_cnt, wgt_uav, tx_p, beta_0, w_var = 50, 9, 80, dbm_watts(23), db_watts(20), constants.Boltzmann * temp * bw
 a_min, a_max, m_sg_post, eval_cnt_max, n_sw_div = -5, 5, m_sg_ip * (m_sg + 2), 1000, {_s: n_ss for _s in range(ss_cnt)}
-g, n_u, n_g, n_c, n_a_u, n_a_g, v_min, v_p_min, v_max, v_num, v_stp = constants.g, 6, 36, 8, 16, 4, 0, 20.1, 50, 25, 0.1
+g, n_u, n_g, n_c, n_a_u, n_a_g, v_min, v_p_min, v_max, v_num, v_stp = constants.g, 6, 36, 8, 16, 4, 0, 16.8, 50, 25, 0.1
 # r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0151, 4, 0.0157, 2865
 
 # Quality-of-Service table for GN traffic upload requests
@@ -241,7 +241,7 @@ def comm_link(_gn, _c_uav):
     """
     Render the GN-UAV link in the MU-MIMO paradigm (with ZF receive beam-forming and receiver thermal noise)
     """
-    _a_gu = np.clip(rad2deg(angle(_gn['voxel'], _c_uav['serv_voxel'])), 0, 89.9)
+    _a_gu = np.clip(rad2deg(angle(_gn['voxel'], _c_uav['serv_voxel'])), 0.01, 89.99)
     _p_los = 1 / (z_1 * np.exp(-z_2 * (_a_gu - z_1)))
 
     _w_vector = np.random.multivariate_normal(np.zeros(2), 0.5 * w_var * np.eye(2), size=n_a_u).view(np.complex128)
@@ -325,7 +325,7 @@ def lcso_eval_obj_1(_traj_wps, _traj_vels, _eval_assign, _eval_obj):
 
     __traj_accs = tf.pad(_traj_accs, tf.constant([[1, 0]]), 'CONSTANT')
 
-    _traj_angles = tf.math.asin(tf.divide(_traj_dists, _traj_hts))
+    _traj_angles = tf.math.asin(tf.divide(_traj_hts, _traj_dists))
     _traj_horz_vels = tf.multiply(__traj_vels, tf.math.cos(_traj_angles))
     _traj_vert_vels = tf.multiply(__traj_vels, tf.math.sin(_traj_angles))
     _traj_horz_accs = tf.multiply(__traj_accs, tf.math.cos(_traj_angles))
@@ -587,19 +587,19 @@ e_min, e_max = energy_1(v_p_min, t_min), energy_1(v_max, t_max)
 # TO-DO: Here, this is derived offline using projected subgradient ascent. However, merge both operations for clarity.
 nu = 0.99 / pwr_avg
 
-h_g = z_d / 2 if h_g is None else h_g  # Heights of the GNs
 h_u = z_max - (z_d / 2)  # Heights of the UAVs optimized via LCSO...
+h_g = z_d / 2 if h_g is None else h_g  # Heights of the GNs
 
 # Assertions for model validations...
 assert h_g != 0 and 0 < h_g < z_max, 'Unsupported or Impractical GN height values!'
 assert h_g % (z_d / 2) == 0, 'GN height values do not adhere to the current grid tessellation!'
 assert x_max % x_d == 0 and y_max % y_d == 0 and z_max % z_d == 0, 'Potential error in given grid tessellation!'
-assert int(energy_1(v_min)) == 1985 and int(energy_1(v_p_min)) == 1734, 'Potential error in energy_1 computation!'
+assert int(energy_1(v_min)) == 1985 and int(energy_1(v_p_min)) == 1714, 'Potential error in energy_1 computation!'
 assert sum([_f['n'] for _f in traffic.values()]) == n_g, 'Traffic QoS does not match the script simulation setup!'
 assert n_u < n_c, 'The number of UAVs should be smaller than the number of GN clusters for better perf. comparisons!'
 assert ss_cnt % 3 == 0 and n_sw % ss_cnt == 0 and sum(n_sw_div.values()) == n_sw, 'Incorrect swarm configs for LCSO!'
-assert int(energy_2([v_min], [0])) == 1985 and int(energy_2([v_p_min], [0])) == 1736, 'Error in energy_2 computation!'
-assert int(energy_3([v_min], [0])) == 1985 and int(energy_3([v_p_min], [0])) == 1586, 'Error in energy_3 computation!'
+assert int(energy_2([v_min], [0])) == 1985 and int(energy_2([v_p_min], [0])) == 1716, 'Error in energy_2 computation!'
+assert int(energy_3([v_min], [0])) == 1985 and int(energy_3([v_p_min], [0])) == 1628, 'Error in energy_3 computation!'
 assert sum([_sc == n_ss and _sc % 3 == 0 for _sc in n_sw_div.values()]) == ss_cnt, 'Incorrect sub-swarm divs for LCSO!'
 
 # Deployment model parameters
