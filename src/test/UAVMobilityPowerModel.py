@@ -69,7 +69,7 @@ def energy_1(_v, _t=1):
 
 def energy_2(_vs, _as):
     """
-    An arbitrary horizontal velocity model for UAV mobility energy consumption (segmented [horz. + vert.] components)
+    An arbitrary horizontal velocity model for UAV mobility energy consumption (separated [horz. + vert.] components)
 
     H. Yan, Y. Chen and S. H. Yang, "New Energy Consumption Model for Rotary-Wing UAV Propulsion,"
     IEEE Wireless Communications Letters, vol. 10, no. 9, pp. 2009-2012, Sept. 2021.
@@ -110,7 +110,7 @@ def energy_2(_vs, _as):
 
 def energy_3(_vs, _as):
     """
-    An arbitrary vertical velocity model for UAV mobility energy consumption (segmented [horz. + vert.] components)
+    An arbitrary vertical velocity model for UAV mobility energy consumption (separated [horz. + vert.] components)
 
     H. Yan, Y. Chen and S. H. Yang, "New Energy Consumption Model for Rotary-Wing UAV Propulsion,"
     IEEE Wireless Communications Letters, vol. 10, no. 9, pp. 2009-2012, Sept. 2021.
@@ -178,22 +178,22 @@ f_vert_accs_dict = {_k: np.clip(np.pad(np.diff(_v), (1, 0), mode='constant',
                                        constant_values=0), a_v_min, a_v_max) for _k, _v in f_vert_vels_dict.items()}
 
 cnst_trace = go.Scatter(x=e_vels, y=[energy_1(_e_vel) for _e_vel in e_vels],
-                        name='Constant Horizontal Velocity', mode='lines+markers')
+                        name='2D Inertial (Constant Velocity) Trajectory', mode='lines+markers')
 
-horz_trace = go.Scatter(name='Arbitrary Horizontal Trajectory', mode='lines+markers', x=e_vels,
+horz_trace = go.Scatter(name='2D Non-Inertial (Horz. Accelerations) Trajectory', mode='lines+markers', x=e_vels,
                         y=[energy_2(horz_vels_dict[_e_vel], horz_accs_dict[_e_vel]) / m_sg for _e_vel in e_vels])
 
 s_horz_trace = go.Scatter(mode='lines+markers', x=e_vels,
-                          name='Arbitrary Horizontal Trajectory (Smoothed)',
+                          name='2D Non-Inertial (Horz. Accelerations) Trajectory (Smoothed)',
                           y=sgnl.savgol_filter([energy_2(horz_vels_dict[_e_vel],
                                                          horz_accs_dict[_e_vel]) / m_sg for _e_vel in e_vels], sz, po))
 
 '''
-vert_trace = go.Scatter(name='Arbitrary Vert. Trajectory', mode='lines+markers', x=e_vels,
+vert_trace = go.Scatter(name='2D Non-Inertial (Vert. Accelerations) Trajectory', mode='lines+markers', x=e_vels,
                         y=[energy_3(vert_vels_dict[_e_vel], vert_accs_dict[_e_vel]) / m_sg for _e_vel in e_vels])
 
 s_vert_trace = go.Scatter(mode='lines+markers', x=e_vels,
-                          name='Arbitrary Vert. Trajectory (Smoothed)',
+                          name='2D Non-Inertial (Vert. Accelerations) Trajectory (Smoothed)',
                           y=sgnl.savgol_filter([energy_3(vert_vels_dict[_e_vel],
                                                          vert_accs_dict[_e_vel]) / m_sg for _e_vel in e_vels], sz, po))
 '''
@@ -201,16 +201,16 @@ s_vert_trace = go.Scatter(mode='lines+markers', x=e_vels,
 f_trace = go.Scatter(mode='lines+markers', x=e_vels,
                      y=[(energy_2(f_horz_vels_dict[_e_vel], f_horz_accs_dict[_e_vel])
                          + energy_3(f_vert_vels_dict[_e_vel], f_vert_accs_dict[_e_vel]))
-                        / m_sg for _e_vel in e_vels], name='Arbitrary 3D (Horz. + Vert.) Trajectory')
+                        / m_sg for _e_vel in e_vels], name='3D Non-Inertial (Horz. + Vert. Accelerations) Trajectory')
 
-s_f_trace = go.Scatter(name='Arbitrary 3D (Horz. + Vert.) Trajectory (Smoothed)',
+s_f_trace = go.Scatter(name='3D Non-Inertial (Horz. + Vert. Accelerations) Trajectory (Smoothed)',
                        y=sgnl.savgol_filter([(energy_2(f_horz_vels_dict[_e_vel], f_horz_accs_dict[_e_vel])
                                               + energy_3(f_vert_vels_dict[_e_vel], f_vert_accs_dict[_e_vel]))
                                              / m_sg for _e_vel in e_vels], sz, po), mode='lines+markers', x=e_vels)
 
 e_layout = dict(title='Rotary-Wing UAV Mobility Power Analysis',
-                xaxis=dict(title='Flying Velocity in m/s (v)', autorange=True),
-                yaxis=dict(title='UAV Power Consumption in W (P)', type='log', autorange=True))
+                xaxis=dict(title='UAV Flying Velocity in meters/second', autorange=True),
+                yaxis=dict(title='UAV Mobility Power Consumption in Watts', type='log', autorange=True))
 
 plotly.plotly.plot(dict(data=[cnst_trace, horz_trace, s_horz_trace, f_trace, s_f_trace], layout=e_layout))
 

@@ -1,0 +1,351 @@
+\newcommand{\CLASSINPUTtoptextmargin}{0.75in}
+\newcommand{\CLASSINPUTbottomtextmargin}{1in}
+\documentclass[10pt, twocolumn]{IEEEtran}
+
+% Packages
+\usepackage{bm}
+\usepackage{url}
+\usepackage{bbm}
+\usepackage{cite}
+\usepackage{tabu}
+\usepackage{array}
+\usepackage{hhline}
+\usepackage{ifthen}
+\usepackage{xspace}
+\usepackage{dsfont}
+\usepackage{balance}
+\usepackage{siunitx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{caption}
+\usepackage{graphicx}
+\usepackage{multicol}
+\usepackage{amsfonts}
+\usepackage{mathrsfs}
+\usepackage{booktabs}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{makecell}
+\usepackage{footnote}
+\usepackage{verbatim}
+\usepackage{algorithm}
+\usepackage{subcaption}
+\usepackage{glossaries}
+\usepackage{soul, xcolor}
+\usepackage[T1]{fontenc}
+\usepackage{algpseudocode}
+\usepackage{algcompatible}
+\usepackage[normalem]{ulem}
+\usepackage{multirow, enumitem}
+
+% Setting up packages
+\captionsetup{font=footnotesize}
+\setlength{\textfloatsep}{1.5pt}
+\sisetup{detect-all, range-phrase=--, range-units=single, group-separator={,}}
+
+% Initializing new commands
+\newcommand{\sst}[1]{\st{#1}}
+\newcommand{\tot}{\mathrm{tot}}
+\newcommand{\tfrm}{T_{\mathrm{fr}}}
+\newcommand{\beam}[1]{\mathcal B_{#1}}
+\newcommand{\add}[1]{\textcolor{red}{#1}}
+\newcommand{\size}[1]{\left | #1 \right|}
+\newcommand{\bk}[1]{\textcolor{blue}{[BK: #1]}}
+\newcommand{\nm}[1]{\textcolor{magenta}{[NM: #1]}}
+\newcommand{\beambs}[1]{\mathcal B_{{\mathrm t},#1}}
+\newcommand{\beamue}[1]{\mathcal B_{{\mathrm r},#1}}
+\newcommand{\diag}[1]{\mathrm{diag}\left(#1 \right)}
+\newcommand{\numberthis}{\addtocounter{equation}{1}\tag{\theequation}}
+\newcommand\mst[2][red]{\setbox0=\hbox{$#2$}\rlap{\raisebox{.45\ht0}{\textcolor{#1}{\rule{\wd0}{2pt}}}}#2}
+
+% Declaring math operators
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+% Initializing additional commands
+\newcommand{\abs}[1]{\left\lvert#1\right\rvert}
+\newcommand{\morn}[1]{\bigg\lVert#1\bigg\rVert}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\suchthat}{\;\ifnum\currentgrouptype=16 \middle\fi|\;}
+
+% Redefining commands
+\renewcommand\theadalign{c}
+\renewcommand{\tabcolsep}{12pt}
+\renewcommand\theadfont{\bfseries}
+\renewcommand\cellgape{\Gape[2pt]}
+\renewcommand\theadgape{\Gape[2pt]}
+
+% Title, Authors, and Affiliations
+\title{Orchestrating UAVs for Prioritized Data Harvesting:\\ A Cross-Layer Optimization Perspective}
+\author{Bharath Keshavamurthy~\IEEEmembership{Student Member, IEEE} and Nicol\`{o} Michelusi~\IEEEmembership{Senior Member, IEEE}
+\thanks{The source code for this project is available on \href{https://github.com/bharathkeshavamurthy/ACCUSTOM.git}{GitHub}~\cite{Source_Code}.}
+\thanks{This work has been supported by NSF under grant CNS-2129015.}
+\thanks{The authors are with Electrical, Computer and Energy Engineering,}
+\thanks{Arizona State University. Email: \{bkeshav1, nicolo.michelusi\}@asu.edu.}
+\vspace{-12mm}}
+
+% Content begins
+\begin{document}
+\bstctlcite{IEEEexample:BSTcontrol}
+
+\maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
+\setulcolor{red}
+\setul{red}{2pt}
+\setstcolor{red}
+\vspace{-12mm}
+
+% Abstract
+\begin{abstract}
+This work describes the orchestration of a fleet of MIMO-capable rotary-wing UAVs for harvesting prioritized traffic from a random distribution of heterogeneous users (with MIMO capabilities). In a finite-horizon offline setting, the goal is to optimize the beam-forming design, the UAV positioning and trajectory solution, and the user association/scheduling policy, to maximize the cumulative fleet-wide reward obtained by satisfying the quality-of-service mandates imposed on each user uplink request, subject to an average per-UAV mobility power constraint. With a probabilistic air-to-ground channel model, a multi-user MIMO uplink communication model with prioritized traffic, and a novel $3$D mobility model for rotary-wing UAVs (with horizontal and vertical accelerations), the proposed framework constitutes a cross-layer optimization construction upon decomposing the global fleet-wide reward maximization problem: first, employ K-means clustering to obtain user clusters; then, equipped with zero-forcing beam-forming design, solve for the optimal positioning of the UAVs via two-stage grid search; next, treating these optimal positions as the graph vertices of a fully-connected mesh, under an average UAV power consumption constraint incorporated via projected subgradient ascent for dual optimization, design the $3$D UAV trajectories (i.e., graph edges) via a learning based competitive swarm optimization algorithm; consequently, solve for the user association/scheduling strategy via a graphical branch-and-bound method on the underlying multiple traveling salesman problem. Numerical evaluations demonstrate that the proposed solution outperforms static UAV deployments, adaptive Voronoi decomposition techniques, and state-of-the-art iterative fleet control algorithms, vis-\'{a}-vis user quality-of-service and UAV average power consumption.
+\end{abstract}
+\vspace{-4mm}
+
+% Introduction, Literature survey, and Novelties
+\section{Introduction}\label{S1}
+In an increasingly connected world, the widespread adoption of next-generation connectivity technologies---specifically, in the industrial landscape---has led to a multi-fold increase in productivity and yield, while exposing vulnerabilities which when tested by external events (cyber-attacks, disasters) can result in significant harm to economic health and quality of life~\cite{Motivation_1, Motivation_2}. In this regard, within the industrial networking paradigm, this paper envisions the use of Unmanned Aerial Vehicles (UAVs) as data harvesting units to gather critical information from monitoring/aggregator nodes. In particular, the $3$D mobility and maneuverability of UAVs allows us to overcome the limitations of beyond visual line-of-sight links~\cite{MAESTRO_TCCN, SPAVE_ICC}; moreover, autonomous UAVs with intelligent control policies can bypass traditional routes that are rendered inaccessible by external events, and collect priority data for troubleshooting/repair. The primary challenges involved in the orchestration of a fleet of UAVs for data harvesting involves managing the varying degrees of quality-of-service mandates vis-\'{a}-vis the different types of uplink requests generated by the nodes in a typical deployment site, the optimal positioning of the UAVs considering air-to-ground channel characteristics, and the subsequent energy-conscious UAV trajectory design considering their limited on-board energy capabilities.
+
+To tackle these challenges, this paper details an optimization framework to orchestrate MIMO-capable power-constrained rotary-wing UAVs for harvesting prioritized traffic from a random distribution of MIMO-capable heterogeneous users. From a cross-layer optimization perspective, i.e., radio layer + vehicle layer, in an offline finite-horizon centralized setting, we decompose the global fleet-wide reward maximization problem into decoupled sub-problems; consequently, we solve for the optimal positioning of the UAVs and their energy-conscious trajectories, the optimal beam-forming design to maximize MIMO gains, and the user association/scheduling policy.
+
+\noindent{\textbf{Related Work}}: Several papers in the state-of-the-art detail policy frameworks to optimize the orchestration of UAVs in a variety of applications: traffic offloading and coverage extensions for terrestrial base stations using UAV relays~\cite{MAESTRO_TCCN}; maximizing coverage for uplink/downlink communication~\cite{Core_SoA_1_Ref_13, Core_SoA_1_Ref_14}; data harvesting from IoT devices~\cite{Core_SoA_1_Ref_12, Core_SoA_1_Ref_18_Extended_From_17, Core_SoA_1_Ref_25}; computation task offloading to UAV augmented edge networks~\cite{Core_SoA_1, Core_SoA_1_Ref_24}; capacity-maximizing distributed MIMO backhaul~\cite{CORES_ICASSP, CORES_JSAC}; and wireless power transfer~\cite{Core_SoA_1_Ref_27_Related_To_26}. While these works in the state-of-the-art tackle UAV fleet orchestration in non-terrestrial networks, they fail to address practical deployment concerns, particularly in the industrial networking paradigm (Fig.~\ref{F1}). Crucially, unlike the formulation in this paper, the approaches that solve for UAV assisted data harvesting~\cite{Core_SoA_1_Ref_12, Core_SoA_1_Ref_18_Extended_From_17, Core_SoA_1_Ref_25}, fail to model user requests with varied priority levels vis-\'{a}-vis their quality-of-service requirements. Also, contrary to the optimization perspective presented in this work, in addition to not modeling prioritized traffic, the solutions in~\cite{Core_SoA_1, Core_SoA_1_Ref_24, CORES_ICASSP, CORES_JSAC, Core_SoA_1_Ref_27_Related_To_26} do not account for the on-board energy constraints of the UAVs, while designing their optimal trajectories. Furthermore, the solutions in~\cite{MAESTRO_TCCN, Core_SoA_1_Ref_13, Core_SoA_1_Ref_14} model simplistic and obsolete communication scenarios, i.e., they consider single antenna users and UAVs throughout their constructions; instead, in this paper, we model the use of MIMO-capable users and UAVs, thereby necessitating beam-forming optimization, and yielding spatial multiplexing gains and multi-user concurrent service.
+
+\noindent{\textbf{Contributions}}: Unlike any other work in the current literature, this paper develops a cross-layer optimization framework based on a model that suitably captures the characteristics of UAV aided networks in industrial automation environments, i.e., a probabilistic air-to-ground channel model, an uplink multi-user MIMO communication model, and a rotary-wing UAV $3$D mobility power consumption model (with horizontal and vertical accelerations) that involves separating the UAV's $3$D mobility vector into its constituents and accumulating their individual power consumption contributions (Fig.~\ref{F2}). More importantly, no other work in the relevant literature considers user requests with varying priority levels and commensurate rewards, i.e., in this work, with a realistic quality-of-service table constituting a variety of traffic flows (Table~\ref{T1}), we model the different types of data offloading requests seen in typical industrial automation deployments (Fig.~\ref{F1}). Additionally, the proposed offline finite-horizon centralized formulation and its resultant cross-layer decomposition, necessitates a solution approach that is unique to UAV aided networks: a multiple traveling salesman problem formulation to obtain the user association/scheduling solution by employing a graph based branch-and-bound technique. Also, with an average per-UAV mobility power constraint, to design the $3$D trajectories of the UAVs, we employ a computationally efficient learning based competitive swarm optimization algorithm and demonstrate its superior convergence performance over state-of-the-art UAV path planning approaches. Finally, our numerical evaluations demonstrate that the proposed framework outperforms static UAV deployments, adaptive Voronoi decomposition schemes, and state-of-the-art iterative fleet control algorithms, vis-\'{a}-vis user quality-of-service and UAV average power consumption.
+
+The rest of this paper is structured as: Sec.~\ref{S2} outlines the system model; Sec.~\ref{S3} elucidates our cross-layer optimization framework along with its constituent algorithms; Sec.~\ref{S4} details our numerical evaluations; Sec.~\ref{S5} lists our conclusions.
+\vspace{-8mm}
+
+% System model
+\section{System Model}\label{S2}
+In this section, as illustrated in Fig.~\ref{F1}, we detail a model consisting of $U$ MIMO-capable UAVs receiving prioritized traffic from $G$ MIMO-capable users over a finite mission duration (UAVs start and end their missions at the depot), wherein the goal is to find the optimal serving position of each UAV (hover-in-place and receive payload) along with the beam-forming design, design the energy-conscious $3$D UAV trajectories, and derive the user association/scheduling policy.
+\begin{figure} [t]
+    \centering
+    \includegraphics[width=1.0\linewidth]{figs/deployment_model.png}
+    \vspace{-6mm}
+    \caption{Deployment model for power grid monitoring and restoration.}
+    \vspace{-1.1mm}
+    \label{F1}
+\end{figure}
+\noindent{\textbf{Deployment Model}}: As illustrated in Fig.~\ref{F1}, we consider a rectangular deployment site of dimensions $x_{\mathrm{max}}{\times}y_{\mathrm{max}}{\times}z_{\mathrm{max}}$, with the site tessellated into a grid world, where each voxel in this grid is of dimensions $\Delta x{\times}\Delta y{\times}\Delta z$. This deployment site consists of $G$ ground-based users, termed as Ground Nodes (GNs), distributed uniformly throughout---with a GN $g{\in}\mathcal{G}{\triangleq}\{1,2,{\dots},G\}$ equipped with $A_{g}$ antennas arranged in a uniform planar array. With a finite mission duration $T$, the autonomous harvesting of data from these GNs is facilitated by $U$ rotary-wing Unmanned Aerial Vehicles (UAVs)---with a UAV $u{\in}\mathcal{U}{\triangleq}\{1,2,{\dots},U\}$ equipped with $A_{u}$ antennas arranged in a uniform planar array. Note that, to enforce heterogeneity in GN and UAV design, $A_{g_{1}}$ may or may not be equal to $A_{g_{2}}$, for two distinct GNs $g_{1},g_{2}{\in}\mathcal{G},g_{1}{\neq}g_{2}$; and $A_{u_{1}}$ may or may not be equal to $A_{u_{2}}$, for two distinct UAVs $u_{1},u_{2}{\in}\mathcal{U},u_{1}{\neq}u_{2}$. Under a Cartesian coordinate system, we denote the position of a GN $g{\in}\mathcal{G}$ as $\mathbf{p}_{g}{=}(x_{g},y_{g},0)$, where $0{\leq}x_{g}{\leq}x_{\mathrm{max}}$ and $0{\leq}y_{g}{\leq}y_{\mathrm{max}}$. Similarly, at time $t{\in}[0,T]$, the position of a UAV $u{\in}\mathcal{U}$ is denoted by $\mathbf{p}_{u}(t){=}(x_{u},y_{u},z_{u})$, with $0{\leq}x_{u}{\leq}x_{\mathrm{max}}$, $0{\leq}y_{u}{\leq}y_{\mathrm{max}}$, and $0{\leq}z_{u}{\leq}z_{\mathrm{max}}$. Thus, the distance between a GN $g$ and its serving UAV $u$ is described as $d_{gu}{=}\sqrt{(x_{u}{-}x_{g})^{2}{+}(y_{u}{-}y_{g})^{2}{+}z_{u}^{2}}$, and the elevation angle is given by $\theta_{gu}{=}\sin^{-1}{(z_{u}/d_{gu})}$. We define $\mathcal{L}$ to be the set of coordinates corresponding to the takeoff/landing pads for the UAVs such that, for every UAV $u{\in}\mathcal{U}$, $\mathbf{p}_{u}(0){\in}\mathcal{L}$ and $\mathbf{p}_{u}(T){\in}\mathcal{L}$: in other words, we require that all the UAVs start and end their service missions at the depot. Also, to ensure collision avoidance among the UAVs, we enforce the added condition $\mathbf{p}_{u_{1}}(t){\neq}\mathbf{p}_{u_{2}}(t),{\forall}t{\in}[0,T],{\forall}u_{1},u_{2}{\in}\mathcal{U},u_{1}{\neq}u_{2}$. With the grid tessellation simplification outlined earlier, in Sec.~\ref{S3}, this collision avoidance constraint is approached as two or more UAVs not simultaneously occupying the same voxel.\\
+\noindent{\textbf{A$2$G Channel Model}}: The channel between a GN $g{\in}\mathcal{G}_{u}$ and its serving UAV $u{\in}\mathcal{U}$ is described by $\mathbf{H}_{gu}{=}\sqrt{\beta}\boldsymbol{\Lambda}$, where $\beta$ captures the large-scale channel variations while $\boldsymbol{\Lambda}$ captures the small-scale fading effects. We model the large-scale fading component of the channel for both Line-of-Sight (LoS) and Non Line-of-Sight (NLoS) conditions in the GN-UAV link as
+\begin{align}\label{Large_scale}
+    \beta_{\mathrm{LoS}}\left(d_{gu}\right) = \beta_{0}d_{gu}^{-\alpha},\ \beta_{\mathrm{NLoS}}\left(d_{gu}\right) = \kappa\beta_{0}d_{gu}^{-\tilde{\alpha}},
+\end{align}
+where $d_{gu}$ is the distance between GN $g$ and its serving UAV $u$, $\beta_{0}$ denotes the reference pathloss at a distance of $1$ m, $2{\leq}\alpha{\leq}\tilde{\alpha}$ denote the pathloss exponents, and $\kappa$ denotes the additional NLoS attenuation. The LoS probability is given by
+\vspace{-2.1mm}
+\begin{align}\label{probabilistic}
+    \mathbb{P}_{\mathrm{LoS}}\left(\theta_{gu}\right) = \frac{1}{\Big(1 + z_{1}\exp\big\{{-}z_{2}(\theta_{gu} - z_{1})\big\}\Big)},
+\end{align}
+with the NLoS probability being $\mathbb{P}_{\mathrm{NLoS}}\left(\theta_{gu}\right){=}1{-}\mathbb{P}_{\mathrm{LoS}}\left(\theta_{gu}\right)$, where $z_{1}$ and $z_{2}$ denote propagation parameters specific to the type of radio environment that exists at the deployment site (e.g., rural, urban, suburban), and $\theta_{gu}{\in}(0^{\circ},90^{\circ}]$ is the elevation angle between the GN $g$ and its serving UAV $u$. Next, the distribution of the small-scale fading component $\boldsymbol{\Lambda}$ is also dependent on the LoS/NLoS link state. For LoS links, $\boldsymbol{\Lambda}$ is modeled as Rician fading with a $\theta_{gu}$-dependent $K$-factor, i.e., $K\left(\theta_{gu}\right){=}k_{1}\exp\{k_{2}\theta_{gu}\}$ (where $k_{1}$ and $k_{2}$ are environment specific propagation parameters); while for NLoS links, we model $\boldsymbol{\Lambda}$ as Rayleigh fading (i.e., Rician with $K\left(\theta_{gu}\right){=}0$)~\cite{MAESTRO_TCCN}.
+% Redefining commands
+\renewcommand\theadalign{c}
+\renewcommand{\tabcolsep}{1.5pt}
+\renewcommand\theadfont{\bfseries}
+\renewcommand\cellgape{\Gape[1pt]}
+\renewcommand\theadgape{\Gape[1pt]}
+\begin{table} [tb]
+	\centering
+    \scriptsize
+	\begin{tabular}{|c|c|c|c|c|}
+		\hline
+		\textbf{Traffic Class} & \textbf{Priority} $\chi$ & \textbf{Max Latency} $\delta_{\mathrm{max}}$ & \textbf{Payload Size} $\nu$ & \textbf{Discount Factor} $\gamma$\\
+		\hline
+		Telemetry & 100 & 9.1 mins & 256 Mb & 0.1\\
+		\hline
+		File Transfer & 24 & 19.0 mins & 536 Mb & 0.8\\
+		\hline
+		Image & 72 & 14.5 mins & 512 Mb & 0.33\\
+		\hline
+		Video Stream & 84 mins & 11.6 & 1387 Mb & 0.24\\
+		\hline
+	\end{tabular}
+    \vspace{-1mm}
+	\caption{Quality-of-service table for the network flows in our evaluations.}
+    \vspace{-1mm}
+	\label{T1}
+\end{table}
+\noindent{\textbf{Communication Model}}: An uplink transmission request from a GN $g{\in}\mathcal{G}$ is characterized by a request header constituting its traffic class, its assigned priority value $\chi_{g}$, the maximum latency $\delta_{g,\mathrm{max}}$ which defines its quality-of-service constraint, the size of its data payload $\nu_{g}$, and its post-deadline discount factor $\gamma_{g}$ for reward tapering. An example quality-of-service table~\cite{DARPA:SC2} for the variety of prioritized traffic flows considered in our numerical evaluations (Sec.~\ref{S4}) is shown in Table~\ref{T1}. We assume that the spectrum allocated to this data harvesting application is discretized into $U$ data channels, each having a preset bandwidth of $B$, with each UAV assigned one of these channels for its service. Let the band-edges of the spectrum be designated as control channels, for inter-UAV communication and for coordination messages between the centralized operations hub and the UAVs. Since the control traffic (UAV-UAV and Hub-UAV) involves very short control frames relative to the large payload frames in the data traffic, we can safely ignore the latencies from control communication in our system model and the subsequent formulations. At time $t{\in}[0,T]$, let the set $\mathcal{G}_{u}{\subseteq}\mathcal{G}$ be defined as the set of GNs associated with UAV $u$. Let $\mathbf{x}_{g}{=}\sqrt{P_{g,\mathrm{Tx}}}\boldsymbol{\Phi}_{g}\mathbf{s}_{g}$ be the signal transmitted to UAV $u{\in}\{1,2,{\dots},U\}$ by GN $g{\in}\mathcal{G}_{u}$, where $P_{g,\mathrm{Tx}}$ denotes the GN's transmit power, $\boldsymbol{\Phi}_{g}{\in}\mathbb{C}^{A_{g}{\times}A_{g}}$ denotes the linear precoding matrix used at the GN, and $\mathbf{s}_{g}{\in}\mathbb{C}^{A_{g}{\times}1}$ denotes the GN's symbol vector with $\mathbb{E}\left[\mathbf{s}_{g}^{H}\mathbf{s}_{g}\right]{=}1$. If $\mathbf{H}_{gu}{=}\mathbf{H}_{gu}(\beta,K){\in}\mathbb{C}^{A_{u}{\times}A_{g}}$ is the channel between GN $g$ and UAV $u$, then the signal received at the UAV is given by
+\vspace{1mm}
+\begin{align}\label{Rx_signal}
+    \mathbf{r}_{u}\ =\ \boldsymbol{\Gamma}_{u} \sum_{g{\in}\mathcal{G}_{u}} \sqrt{P_{g,\mathrm{Tx}}}\mathbf{H}_{gu}\boldsymbol{\Phi}_{g}\mathbf{s}_{g}\ +\ \boldsymbol{\Gamma}_{u}\mathbf{w},
+\end{align}
+where $\boldsymbol{\Gamma}_{u}{\in}\mathbb{C}^{A_{u}{\times}A_{u}}$ represents the combining matrix used at the UAV, and the zero-mean additive white Gaussian noise vector $\mathbf{w}{\sim}\mathcal{CN}(\mathbf{0},BN_{0}\mathbf{I}_{A_{u}})$ after combining becomes $\boldsymbol{\Gamma}_{u}\mathbf{w}{\sim}\mathcal{CN}(\mathbf{0},BN_{0}\boldsymbol{\Gamma}_{u}\boldsymbol{\Gamma}_{u}^{H})$---with $N_{0}$ denoting the power spectral density of the noise and $\mathbf{I}_{A_{u}}$ denoting the identity matrix of size $A_{u}{\times}A_{u}$. Therefore, the capacity of the MIMO channel (thus, the maximum achievable transmission rate) is
+\vspace{1mm}
+\begin{align}\label{Rate}
+    &R_{gu}(\beta,K) = B\log_{2}\det{\left(\boldsymbol{\Upsilon}\right)}\text{, where }\mathbf{H}_{gu}{=}\mathbf{H}_{gu}(\beta,K),\\
+    &\boldsymbol{\Upsilon}{=}\mathbf{I}_{A_{u}}{+}\frac{\left(\boldsymbol{\Gamma}_{u}\mathbf{H}_{gu}\right)\mathbb{E}\left[\mathbf{x}_{g}\mathbf{x}_{g}^{H}\right]\left(\boldsymbol{\Gamma}_{u}\mathbf{H}_{gu}\right)^{H}}{BN_{0}\boldsymbol{\Gamma}_{u}\boldsymbol{\Gamma}_{u}^{H}{+}\underset{j{\in}\mathcal{G}_{u}{\setminus}g}{\sum}\left(\boldsymbol{\Gamma}_{u}\mathbf{H}_{ju}\right)\mathbb{E}\left[\mathbf{x}_{j}\mathbf{x}_{j}^{H}\right]\left(\boldsymbol{\Gamma}_{u}\mathbf{H}_{ju}\right)^{H}}.\nonumber
+\end{align}
+Finally, averaging out LoS and NLoS conditions, and using the rate equation in Eq.~\eqref{Rate}, the average link throughput is
+\begin{align}\label{throughput}
+    \Bar{R}_{gu}\left(d_{gu},\theta_{gu}\right) = &\mathbb{P}_{\mathrm{LoS}}\left(\theta_{gu}\right)R_{gu}\Big(\beta_{\mathrm{LoS}}\left(d_{gu}\right),K\left(\theta_{gu}\right)\Big) + \nonumber\\&\mathbb{P}_{\mathrm{NLoS}}\left(\theta_{gu}\right)R_{gu}\Big(\beta_{\mathrm{NLoS}}\left(d_{gu}\right),0\Big).
+\end{align}
+With this communication model and the GN traffic model described earlier, the reward formulation for the serving UAV is discussed next. Let $\delta_{gu}$ be the time taken by UAV $u$ to harvest the data from GN $g$ (depending on GN-UAV positions, the beam-forming design, and the channel conditions); then, the reward $\Omega_{gu}$ obtained by the UAV is described as follows:
+\begin{align}\label{Reward}
+    \Omega_{gu} = \chi_{g}\gamma_{g}^{(\delta_{gu} - \delta_{\mathrm{g,max}})},\text{ where }\delta_{gu} = \frac{\nu_{g}}{\Bar{R}_{gu}\left(d_{gu},\theta_{gu}\right)}.
+\end{align}
+\begin{figure} [t]
+    \centering
+    \includegraphics[width=1.0\linewidth]{figs/uav_mobility_power_model.png}
+    \vspace{-5mm}
+    \caption{UAV power analyses for $2$D inertial trajectory (blue), $2$D non-inertial trajectory (horizontal accelerations) where its average velocity is equal to the abscissa (red), and $3$D non-inertial trajectory (horizontal and vertical accelerations) where its average velocity is equal to the abscissa (black).}
+    \label{F2}
+    \vspace{-1mm}
+\end{figure}
+We operate under the assumption that a UAV in the fleet can serve multiple GNs simultaneously, but a GN can only be associated with one UAV, i.e., a GN cannot transmit its data to multiple UAVs. Additionally, once a GN is associated with a UAV, the GN fully uploads its data to the UAV (within a time duration determined by the beam-forming design as well as the channel conditions); upon successfully offloading its data, the GN is considered to have been served by the UAV fleet.\\
+\noindent{\textbf{UAV Power Model}}: Highlighting the need to accurately model the mobility power consumption of rotary-wing UAVs, Fig.~\ref{F2} depicts the inaccuracies seen in $2$D constant velocity models~\cite{UAV_Propulsion_2, MAESTRO_TCCN}: accounting for vertical propulsion in $3$D motion introduces significant power costs, while introducing horizontal and vertical accelerations results in additional power consumption contributions. In this paper, generalizing the UAV experiments in~\cite{UAV_Propulsion_1}, we aim to alleviate the drawbacks of the widely-used $2$D constant velocity models, by employing vector separation techniques to split the UAV's $3$D motion vector in any given arbitrary trajectory into its constituent horizontal and vertical components, and accumulating their individual power consumption contributions. We define the energy-conscious $3$D trajectory of a UAV $u{\in}\mathcal{U}$ (designed in Sec.~\ref{S3}) as $\mathcal{Q}_{u}{\triangleq}\Big\{\mathbf{p}_{u}(\tau),\vec{v}_{u}(\tau): \tau{\in}\left[t_{u,i},t_{u,f}\right]\Big\}$, where $t_{u,i}$ and $t_{u,f}$ denote the trajectory start and end times, $\mathbf{p}_{u}(\tau)$ denotes the trajectory waypoint at time $\tau$, and $\vec{v}_{u}(\tau)$ is the $3$D velocity vector at time $\tau$, which is separated into its constituent horizontal and vertical components as follows: ${\forall}\tau{\in}\left[t_{u,i},t_{u,f}\right]$,
+\begin{align*}
+    v_{u,\mathrm{h}}(\tau){=}\abs{\vec{v}_{u}(\tau)}\cos{\angle{\vec{v}_{u}(\tau)}},\ v_{u,\mathrm{v}}(\tau){=}\abs{\vec{v}_{u}(\tau)}\sin{\angle{\vec{v}_{u}(\tau)}}.
+\end{align*}
+Therefore, the overall mobility power consumption of a UAV $u{\in}\mathcal{U}$ upon executing a given trajectory is described as follows:
+\begin{align}\label{3D_power}
+    &P_{u,3\mathrm{D}}\left(\mathcal{Q}_{u}\Big(t_{u,i},t_{u,f}\right)\Big) = \\&\frac{1}{t_{u,\Delta}}\Bigg[E_{u,\mathrm{h}}\left(\Big\{v_{u,\mathrm{h}}(\tau)\Big\}_{\tau{=}t_{u,i}}^{\tau{=}t_{u,f}}\right){+}E_{u,\mathrm{v}}\left(\Big\{v_{u,\mathrm{v}}(\tau)\Big\}_{\tau{=}t_{u,i}}^{\tau{=}t_{u,f}}\right)\Bigg],\nonumber
+\end{align}
+where $t_{u,\Delta}{=}t_{u,f}{-}t_{u,i}$ is the execution duration of trajectory $\mathcal{Q}_{u}$, $E_{u,\mathrm{h}}({\cdot})$ denotes the energy consumption contributions due to arbitrary accelerating horizontal motion of the UAV, i.e.,
+\begin{align}\label{Horizontal_energy}
+    &E_{u,\mathrm{h}}\left(\Big\{v_{u,\mathrm{h}}(\tau)\Big\}_{\tau{=}t_{u,i}}^{\tau{=}t_{u,f}}\right) = \int_{t_{u,i}}^{t_{u,f}}C_{0}\Big(1 + C_{1}v_{u,\mathrm{h}}^{2}(\tau)\Big)d\tau + \nonumber\\&\int_{t_{u,i}}^{t_{u,f}}\kappa_{u,\mathrm{h}}(\tau)C_{2}\left(\sqrt{\kappa_{u,\mathrm{h}}^{2}(\tau){+}\frac{v_{u,\mathrm{h}}^{4}(\tau)}{C_{3}^{2}}}{-}\frac{v_{u,\mathrm{h}}^{2}(\tau)}{C_{3}}\right)^{\frac{1}{2}}d\tau{+}\nonumber\\&\int_{t_{u,i}}^{t_{u,f}}C_{4}v_{u,\mathrm{h}}^{3}(\tau)d\tau + \frac{\varrho}{2g}\Big(v_{u,\mathrm{h}}^{2}(t_{u,f}) - v_{u,\mathrm{h}}^{2}(t_{u,i})\Big),
+\end{align}
+while $E_{u,\mathrm{v}}({\cdot})$ represents the energy consumption contributions due to arbitrary accelerating vertical motion of the UAV, i.e.,
+\begin{align}\label{Vertical_energy}
+    &E_{\mathrm{v}}\left(\Big\{v_{u,\mathrm{v}}(\tau)\Big\}_{\tau{=}t_{u,i}}^{\tau{=}t_{u,f}}\right){=}\int_{t_{u,i}}^{t_{u,f}}C_{0}\Big(1 + C_{1}v_{u,\mathrm{v}}^{2}(\tau)\Big)d\tau\\&\int_{t_{u,i}}^{t_{u,f}}\kappa_{u,\mathrm{v}}(\tau)C_{2}\left(\sqrt{\kappa_{u,\mathrm{v}}^{2}(\tau){+}\frac{v_{u,\mathrm{v}}^{4}(\tau)}{C_{3}^{2}}}{-}\frac{v_{u,\mathrm{v}}^{2}(\tau)}{C_{3}}\right)^{\frac{1}{2}}d\tau\nonumber,
+\end{align}
+where $a_{u,\mathrm{h}}(\tau){=}\frac{dv_{u,\mathrm{h}}(\tau)}{d\tau}$ is the horizontal acceleration of the UAV at time $\tau$, $a_{u,\mathrm{v}}(\tau){=}\frac{dv_{u,\mathrm{v}}(\tau)}{d\tau}$ is the vertical acceleration of the UAV at time $\tau$, $\kappa_{u,\mathrm{h}}(\tau){=}\kappa\left(v_{u,\mathrm{h}}(\tau),a_{u,\mathrm{h}}(\tau)\right)$ is the UAV's thrust-to-weight ratio for the horizontal plane, and $\kappa_{u,\mathrm{v}}(\tau){=}\kappa\left(v_{u,\mathrm{v}}(\tau),a_{u,\mathrm{v}}(\tau)\right)$ is the UAV's thrust-to-weight ratio for the vertical plane. We define this thrust-to-weight ratio term for a generic velocity and acceleration as follows:
+\vspace{1.319mm}
+\begin{align}\label{Kappa_term}
+    \kappa\Big(v(\tau),a(\tau)\Big) = \sqrt{1 + \frac{\Big(\rho\omega\varphi\vartheta v^{2}(\tau) + \frac{2\varrho a(\tau)}{g}\Big)^{2}}{4\varrho^{2}}}.
+\end{align}
+Here, the site constants $g$ and $\rho$; the UAV design parameters $\varrho$, $\omega$, $\varphi$, and $\vartheta$; and the UAV operational specifications $C_{0}$, $C_{1}$, $C_{2}$, $C_{3}$, and $C_{4}$, are derived from the experiments in~\cite{UAV_Propulsion_1} and are listed in Table~\ref{T2}. Note that, since the UAVs in our formulation are only receiving traffic from the GNs and are not involved in any multi-antenna data transmissions, we can safely ignore their communication power contributions (in the order of $1{-}10$ W, insignificant relative to their mobility power contributions, which are in the order of $1000{-}10{,}000$ W).
+\vspace{-3mm}
+
+% Cross-layer optimization: The radio and vehicle layers
+\section{Cross-Layer Optimization Formulation}\label{S3}
+\begin{figure}[t]
+     \centering
+     \includegraphics[width=1.0\linewidth]{figs/solution_model.png}
+     \vspace{-6mm}
+     \caption{The solution flow of our cross-layer optimization approach.}
+     \vspace{-3mm}
+     \label{F3}
+\end{figure}
+% Redefining commands
+\renewcommand\theadalign{c}
+\renewcommand{\tabcolsep}{3pt}
+\renewcommand\theadfont{\bfseries}
+\renewcommand\cellgape{\Gape[1pt]}
+\renewcommand\theadgape{\Gape[1pt]}
+\begin{table} [tb]
+    \centering
+    \tiny
+    \begin{center}
+        \begin{tabular}{|*{3}{c|}}
+        \hline
+        \thead{\textbf{Notation}} & \thead{\textbf{Description}} & \thead{\textbf{Simulation Value}}\\
+        \hline
+        $T$ & Max mission duration & $3000$ s\\
+        \hline
+        $U$; $G$ & Number of UAVs; Number of GNs & $6$; $36$\\
+        \hline
+        $\Delta_{x}$; $\Delta_{y}$; $\Delta_{z}$ & Grid voxel dimensions & $10$ m; $10$ m; $10$ m\\
+        \hline
+        $x_{\mathrm{max}}$; $y_{\mathrm{max}}$; $z_{\mathrm{max}}$ & Max site dimensions & $3$ km; $3$ km; $150$ m\\
+        \hline
+        \hline
+        $\beta_{0}$ & Reference SNR at $1$ m & $20$ dB\\
+        \hline
+        $A_{u}$; $A_{g}$ & UAV antenna count; GN antenna count & $16$; $4$\\
+        \hline
+        $B$; $P_{g,\mathrm{Tx}}$ & Channel bandwidth; GN transmission power & $5$ MHz; $23$ dBm\\
+        \hline
+        $\alpha$, $\tilde{\alpha}$; $\kappa$ & LoS, NLoS pathloss exponents; NLoS attenuation & $2$, $2.8$; $0.2$\\
+        \hline
+        $z_{1}$, $z_{2}$; $k_{1}$, $k_{2}$ & LoS probability parameters; Rician $K$-factor parameters & $9.61$, $0.16$; $1$, $0.05$\\
+        \hline
+        \hline
+        $C_{0}$ & UAV power constant vis-\'{a}-vis blade profile & $1276.46$ W\\
+        \hline
+        $C_{1}$ & UAV power constant vis-\'{a}-vis blade profile & $5.21{\times}10^{-5}$ $\mathrm{s}^{2}/\mathrm{m}^{2}$\\
+        \hline
+        $C_{2}$ & UAV power constant vis-\'{a}-vis induced effects & $709.27$ W\\
+        \hline
+        $C_{3}$ & UAV power constant vis-\'{a}-vis induced effects & $129.92$ $\mathrm{s}^{2}/\mathrm{m}^{2}$\\
+        \hline
+        $C_{4}$ & UAV power constant vis-\'{a}-vis parasitic effects & $0.02$ W\\
+        \hline
+        $g$; $\rho$ & Acceleration under gravity; Air density & $9.81$ m/$\mathrm{s}^{2}$; $1.23$ kg/$\mathrm{m}^{3}$\\
+        \hline
+        $\varphi$; $\vartheta$ & UAV rotor solidity; UAV rotor disc area & $0.1$; $0.5$ $\mathrm{m}^{2}$\\
+        \hline
+        $\omega$; $\varrho$ & UAV fuselage drag ratio; UAV weight & $0.6$; $80$ N\\
+        \hline
+        $v_{\mathrm{max}}$; $a_{\mathrm{max}}$ & UAV max velocity; UAV max acceleration & $50$ m/s; $5$ m/$\mathrm{s}^{2}$\\
+        \hline
+        \hline
+        $N_{\mathrm{sw}}$; $N_{\mathrm{ssw}}$ & LCSO swarm size; LCSO sub-swarm size & $180$; $20$\\
+        \hline
+        $M_{\mathrm{seg}}$; $F_{\mathrm{max}}$ & LCSO segment size; LCSO max evaluations count & $128$; $1000$\\
+        \hline
+        \end{tabular}
+        \vspace{-1mm}
+        \caption{The simulation parameters employed in our numerical evaluations.}
+        \vspace{-3mm}
+        \label{T2}
+    \end{center}
+\end{table}
+The objective of the proposed solution framework (Fig.~\ref{F3}) is to maximize the cumulative fleet-wide reward obtained by successfully harvesting prioritized traffic from GNs on-site over a preset finite mission duration. Let $\mathcal{S}$ represent the set of optimization variables, i.e., the beam-forming design, the optimal UAV serving positions, the $3$D energy-conscious UAV trajectories, and the GN association/scheduling policy. Then, the optimization problem is described as follows in Eq.~\eqref{Optimization_problem}, with the constraints including the UAV start and end position enforcement in \eqref{C1}; the UAV collision avoidance in \eqref{C2}; the GN-UAV scheduling exclusivity in \eqref{C3}; and the UAV's average mobility power consumption, the UAV's velocity bounds, and the UAV's acceleration bounds, in \eqref{C4}:
+\begin{align}\label{Optimization_problem}
+    &\underset{\mathcal{S}}{\mathrm{maximize}}\sum_{t{=}1}^{T}\sum_{u{\in}\mathcal{U}}\sum_{g{\in}\mathcal{G}_{u}}\Omega_{gu}\text{ s.t. } \forall u \in \mathcal{U},\  \forall t \in [0,T],\\
+    &\mathbf{p}_{u}(0) \in \mathcal{L},\ \mathbf{p}_{u}(T) \in \mathcal{L},\label{C1}\tag{C.1}\\
+    &\mathbf{p}_{u_{1}}(t) \neq \mathbf{p}_{u_{2}}(t),\ \forall u_{1}, u_{2} \in \mathcal{U},\ u_{1} \neq u_{2},\label{C2}\tag{C.2}\\
+    &g \in \mathcal{G}_{u_{1}}{\implies}g \notin \mathcal{G}_{u_{2}}, u_{1}, u_{2} \in \mathcal{U}, u_{1} \neq u_{2}, g \in \mathcal{G},\label{C3}\tag{C.3}\\
+    &P_{u,3\mathrm{D}}(t) \leq P_{\mathrm{avg}},\ \abs{\vec{v}_{u}(t)} \leq v_{\mathrm{max}},\ \abs{\vec{a}_{u}(t)} \leq a_{\mathrm{max}}.\label{C4}\tag{C.4}
+\end{align}
+Given the problem complexity, we decompose it into radio and vehicle layer sub-problems, and solve each individually using its corresponding proposed algorithm (Fig.~\ref{F3}). First, we cluster the GNs according to their proximity on-site using the naive (standard) K-means clustering algorithm; then, coupled with zero-forcing beam-forming design, we employ a coarse- and fine-grained grid search to find the optimal UAV service voxel; next, using the learning based competitive swarm optimization algorithm, we design the energy-conscious UAV trajectories; finally, with a multiple traveling salesman problem setup, we solve for the GN association/scheduling policy via a graphical branch-and-bound technique. We discuss these in detail next.\\
+\noindent{\textbf{Radio Layer | Optimal UAV Positioning}}: Upon clustering the GNs on-site into $C$ clusters, we employ two-stage grid search to determine the optimal $3$D positioning of a UAV serving each of these GN clusters. The first stage (coarse search) involves a bounding-box strategy to determine the larger set of $3$D grid voxels, i.e., the voxels within the smallest area subset encapsulating the GNs in a cluster; these constitute the argument set for the second stage (fine search), where with Zero-Forcing (ZF) beam-forming to design the precoding and combining matrices described in Sec.~\ref{S2} according to the procedures outlined in~\cite{ZF, Core_SoA_1}, we select the grid voxel that maximizes the cluster reward as the optimal service position.\\
+\noindent{\textbf{Vehicle Layer | UAV Trajectory Design}}: The Learning based Competitive Swarm Optimization (LCSO) algorithm~\cite{LCSO} is a computationally efficient variant of the popular Competitive Swarm Optimization (CSO) algorithm typically used for route planning~\cite{MAESTRO_TCCN}, thereby making it a suitable candidate for $3$D UAV trajectory design. Treating the optimal service positions for each GN cluster as the graph vertices of a fully-connected mesh (including the depot), we use LCSO to obtain the $3$D trajectory a UAV in the fleet should execute vis-\'{a}-vis an edge connecting any two of these graph vertices. In this trajectory design process, a Lagrangian setup involving the average mobility power consumption constraint imposed on each UAV is introduced, wherein we use projected subgradient ascent (iteratively coupled with LCSO) for dual variable optimization. First, the randomly initialized swarm of $N_{\mathrm{sw}}$ particles $(\mathbf{p},v)_{1:N_{\mathrm{sw}}}$ and their particle velocities $(\boldsymbol{\upsilon},\eta)_{1:N_{\mathrm{sw}}}$ is grouped into sub-swarms of $N_{\mathrm{ssw}}$ particles; then, in each iteration $i$, every particle $(\mathbf{p}, v)$ in a sub-swarm competes in a tournament with others in the sub-swarm as follows based on a mobility power cost function (see Sec.~\ref{S2}). These tournaments are organized independently (and in parallel) across all the sub-swarms. Specifically, each such tournament within any sub-swarm involves the following procedure: first, randomly select three particles; next, compute and compare their power cost functions; consequently, decide a winner $\boldsymbol{\psi}_{w}$, a runner-up $\boldsymbol{\psi}_{r}$, and a loser $\boldsymbol{\psi}_{l}$; subsequently, modify the knowledge of the runner-up and the loser based on the winner as follows:
+\vspace{0.405mm}
+\begin{align}\label{LCSO}
+    &\boldsymbol{\xi}_{r}(i + 1) = n_{1}\boldsymbol{\xi}_{r}(i) + n_{2}\left(\boldsymbol{\psi}_{w}(i) - \boldsymbol{\psi}_{r}(i)\right);\nonumber\\
+    &\boldsymbol{\psi}_{r}(i + 1) = \boldsymbol{\psi}_{r}(i) + \boldsymbol{\xi}_{r}(i + 1);\nonumber\\
+    &\boldsymbol{\xi}_{l}(i{+}1){=}n_{1}\boldsymbol{\xi}_{l}(i){+}n_{2}\left(\boldsymbol{\psi}_{w}(i){-}\boldsymbol{\psi}_{l}(i)\right){+}n_{3}\left(\boldsymbol{\psi}_{r}(i){-}\boldsymbol{\psi}_{l}(i)\right);\nonumber\\
+    &\boldsymbol{\psi}_{l}(i + 1) = \boldsymbol{\psi}_{l}(i) + \boldsymbol{\xi}_{l}(i + 1);
+\end{align}
+where $\boldsymbol{\xi}_{w}$, $\boldsymbol{\xi}_{r}$, and $\boldsymbol{\xi}_{l}$ correspond to the particle velocities of the winner, runner-up, and loser particles, $\boldsymbol{\psi}_{w}$, $\boldsymbol{\psi}_{r}$, and $\boldsymbol{\psi}_{l}$, respectively; and $n_{1},n_{2},n_{3}{\sim}\mathrm{Uniform}[0,1]$. Next, the second stage of the LCSO algorithm constitutes a tournament among the sub-swarms: randomly choose a particle from among the winners of each sub-swarm; then, randomly choose three particles from this set of winners; after which, compute and compare their power cost functions to determine a winner $\boldsymbol{\psi}_{w}$, a runner-up $\boldsymbol{\psi}_{r}$, and a loser $\boldsymbol{\psi}_{l}$; next, update the knowledge of the runner-up and the loser particles based on the attributes of the winner according to~\eqref{LCSO}. This iterative two-stage process continues until the number of constituent computations of the underlying power costs exceeds a preset threshold ($F_{\mathrm{max}}$)~\cite{LCSO}.
+\noindent{\textbf{Radio + Vehicle Layers | GN Association/Scheduling}}: To solve for the GN association/scheduling policy, we formulate a multiple Traveling Salesman Problem (mTSP) setup~\cite{mTSP_Branch_and_Bound}, wherein with the added constraints of the UAVs having to start and end at the depot, the inherent objective is to plan the routes of the UAVs in the network to serve the GN clusters on-site (at the corresponding optimal service voxels obtained earlier via two-stage grid search), while maximizing the cumulative reward attained across the fleet over the mission execution duration. In the overlaid fully-connected mesh, with the graph vertices (i.e., the optimal service positions and the depot) and the edges connecting them (i.e., the $3$D UAV trajectories and their time \& power costs) obtained via the processes outlined earlier in this section, this mTSP formulation is solved using the well-known graphical branch-and-bound method~\cite{mTSP_Branch_and_Bound} to obtain the association of UAVs in the fleet with specific GN clusters as well as the scheduling sequence in which a particular UAV goes about serving its associated clusters.
+\vspace{-3mm}
+
+% Numerical evaluations
+\section{Numerical Evaluations}\label{S4}
+\begin{figure*}[t]
+    \centering
+    \begin{subfigure}{0.492\linewidth}
+        \centering
+        \includegraphics[width=0.8615\linewidth]{figs/reward_vs_average_power.png}
+        \vspace{-1mm}
+        \caption{Cumulative Fleet-Wide Reward vs Average Per-UAV Power Consumption~\cite{Source_Code}}
+        \label{F4a}
+    \end{subfigure}
+    \begin{subfigure}{0.501\linewidth}
+        \centering
+        \includegraphics[width=0.8615\linewidth]{figs/reward_vs_number_of_uavs.png}
+        \vspace{-1mm}
+        \caption{Cumulative Fleet-Wide Reward vs Number of UAVs in the Fleet~\cite{Source_Code}}
+        \label{F4b}
+    \end{subfigure}
+    \vspace{-5mm}
+    \caption{(a) A plot of the total fleet-wide reward vs average per-UAV power consumption; (b) A plot of the total fleet-wide reward vs the number of UAVs.}
+    \vspace{-7mm}
+    \label{F4}
+\end{figure*}
+With the simulation setup detailed in Table~\ref{T2}, we evaluate the performance of the proposed cross-layer optimization framework against static UAV deployments, adaptive Voronoi decompositions, and the iterative fleet orchestration schemes adapted from~\cite{CORES_ICASSP}. For static UAV deployments, coupled with K-means clustering ($C{=}U{=}6$) and a multi-user MIMO ZF beam-forming design, we statically position each of the $U$ UAVs at the centroid of their respective clusters (at a height of $z_{u}{=}145$ m,${\forall}u{\in}\mathcal{U}$) and evaluate the fleet-wide reward. For the adaptive Voronoi decomposition techniques, we iteratively update (until convergence) the Voronoi sets of associated GNs for each UAV, using either the GN-UAV distance or the received power as the evaluation metric; then, we update the UAV positions to be centroids of their respective Voronoi sets in that iteration; finally, we position the UAVs at these optimal positions and compute the fleet-wide reward. For the Iterative Gradient Descent (IGD) and the Iterative Brute Force (IBF) algorithms adapted from~\cite{CORES_ICASSP} to suit our network modeling, upon clustering the GNs via K-means clustering ($C{=}U{=}6$), coupled with ZF beam-forming, the optimal UAV service position for each GN cluster is obtained via the IGD and IBF algorithms~\cite{CORES_ICASSP}; subsequently, we positions the UAVs at these optimal service positions and evaluate the fleet-wide reward. Fig.~\ref{F4a} depicts the total reward accumulated by the fleet of UAVs using our solution, as a function of the average power consumption constraint on each UAV ($P_{\mathrm{avg}}$), over the simulated mission duration ($T{=}3000$ s). For similar power levels, we demonstrate a $39$\% gain over static deployments, a $31$\% enhancement over distance based Voronoi decomposition, a $23$\% boost over Rx power based Voronoi decomposition, a $42$\% gain over the IGD scheme from~\cite{CORES_ICASSP}, and a $47$\% gain over the IBF scheme from~\cite{CORES_ICASSP}. Also, Fig.~\ref{F4b} shows the cumulative fleet-wide reward as a function of the number of UAVs $U$ in the fleet (fixed $G{=}36$) along with the reference benchmarks of a static deployment, the Voronoi decomposition techniques, and the IGD and IBF schemes from~\cite{CORES_ICASSP}: here, we show that, the cumulative fleet-wide reward increases with the number of UAVs, and that our proposed cross-layer mTSP solution consistently (across $3$, $6$, $9$, and $12$ UAVs) outperforms static UAV deployments, Voronoi decompositions, and IGD and IBF schemes from~\cite{CORES_ICASSP}. 
+\vspace{-6mm}
+
+% Concluding remarks and Future work
+\section{Conclusion}\label{S5}
+We detail the orchestration of a fleet of MIMO-capable rotary-wing UAVs for prioritized data harvesting from GNs (with MIMO capabilities). With a preset mission duration and site tessellation, the fleet-wide reward maximization problem is solved offline under a cross-layer optimization formulation. With K-means clustering and ZF beam-forming, we employ two-stage grid search to obtain the optimal UAV service voxel; next, we design the energy-conscious $3$D UAV trajectories via LCSO; finally, we derive the GN association/scheduling policy via a branch-and-bound method (which solves the underlying mTSP). Numerical evaluations illustrate that our solution framework outperforms static UAV deployments, adaptive Voronoi decompositions, as well as the IGD and IBF schemes vis-\'{a}-vis GN quality-of-service and UAV power efficiency.
+\vspace{-3mm}
+
+% References (main.bib)
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEabrv,main}
+
+\end{document}
+% Content ends

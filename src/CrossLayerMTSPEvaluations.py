@@ -72,18 +72,19 @@ CONFIGURATIONS
 """
 
 # Converters
+deg2rad, rad2deg = lambda _x: _x * (np.pi / 180), lambda _x: _x * (180 / np.pi)
 db_watts, dbm_watts = lambda _x: 10 ** (_x / 10), lambda _x: 10 ** ((_x - 30) / 10)
 watts_db, watts_dbm = lambda _x: 10 * np.log10(_x), lambda _x: 10 * np.log10(_x) + 30
 
 # Simulation setup (MKS/SI units)
 # TO-DO Config | Core analysis variables: Number of UAVs, Number of GNs, and P_avg
-n_w, m_sg, m_sg_ip, n_sw, omega, pwr_avg = 1024, 126, 2, 540, 1, np.arange(start=1e3, stop=2.25e3, step=0.25e3)[0]
+v_h_max, t_min, t_max, x_max, y_max, z_max, x_d, y_d, z_d, h_g = 50, 300, 3000, 3000, 3000, 150, 10, 10, 10, None
+n_w, m_sg, m_sg_ip, n_sw, omega, pwr_avg, n_ss = 1024, 62, 2, 189, 1, np.linspace(start=2e3, stop=5e3, num=9)[0], 21
 pi, temp, k_1, k_2, z_1, z_2, alpha, alpha_, kappa, bw = np.pi, 300, 1, np.log(100) / 90, 9.61, 0.16, 2, 2.8, 0.2, 5e6
 r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0302, 8, 0.0157, 5730
-v_v_max, ss_cnt, wgt_uav, tx_p, beta_0, w_var = 30, 9, 80, dbm_watts(23), db_watts(20), constants.Boltzmann * temp * bw
-g, n_u, n_g, n_c, n_a_u, n_a_g, v_min, v_p_min, v_max, v_num, v_stp = constants.g, 6, 36, 8, 16, 4, 0, 20.1, 30, 25, 0.1
-v_h_max, t_min, t_max, x_max, y_max, z_max, x_d, y_d, z_d, h_g, n_ss = 30, 300, 3000, 5000, 5000, 200, 5, 5, 5, None, 60
-a_min, a_max, m_sg_post, eval_cnt_max, n_sw_div = -5, 5, m_sg_ip * (m_sg + 2), 100, {_ss: n_ss for _ss in range(ss_cnt)}
+v_v_max, ss_cnt, wgt_uav, tx_p, beta_0, w_var = 50, 9, 80, dbm_watts(23), db_watts(20), constants.Boltzmann * temp * bw
+a_min, a_max, m_sg_post, eval_cnt_max, n_sw_div = -5, 5, m_sg_ip * (m_sg + 2), 1000, {_s: n_ss for _s in range(ss_cnt)}
+g, n_u, n_g, n_c, n_a_u, n_a_g, v_min, v_p_min, v_max, v_num, v_stp = constants.g, 6, 36, 8, 16, 4, 0, 20.1, 50, 25, 0.1
 # r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0151, 4, 0.0157, 2865
 
 # Quality-of-Service table for GN traffic upload requests
@@ -134,7 +135,7 @@ def energy_1(_v, _t=1):
 
 def energy_2(_vs, _as):
     """
-    An arbitrary horizontal velocity model for UAV mobility energy consumption (segmented [horz. + vert.] components)
+    An arbitrary horizontal velocity model for UAV mobility energy consumption (separated [horz. + vert.] components)
 
     H. Yan, Y. Chen and S. H. Yang, "New Energy Consumption Model for Rotary-Wing UAV Propulsion,"
     IEEE Wireless Communications Letters, vol. 10, no. 9, pp. 2009-2012, Sept. 2021.
@@ -175,7 +176,7 @@ def energy_2(_vs, _as):
 
 def energy_3(_vs, _as):
     """
-    An arbitrary vertical velocity model for UAV mobility energy consumption (segmented [horz. + vert.] components)
+    An arbitrary vertical velocity model for UAV mobility energy consumption (separated [horz. + vert.] components)
 
     H. Yan, Y. Chen and S. H. Yang, "New Energy Consumption Model for Rotary-Wing UAV Propulsion,"
     IEEE Wireless Communications Letters, vol. 10, no. 9, pp. 2009-2012, Sept. 2021.
@@ -209,7 +210,7 @@ def energy_3(_vs, _as):
     return _term_0 + _term_1
 
 
-def cl_mtsp_channel(_c_uav, _voxel=None):
+def cl_mtsp_channel(_c_uav, _los, _voxel=None):
     """
     Cross-Layer mTSP MU-MIMO Cluster-UAV channel generation considering both large- and small-scale fading statistics
     """
@@ -221,31 +222,42 @@ def cl_mtsp_channel(_c_uav, _voxel=None):
     for _a_u in range(n_a_u):
         for _gn in _c_uav['gns']:  # GNs served by '_c_uav'
             _a_gu = angle(_gn['voxel'], _c_uav['serv_voxel'])
+            _k_factor = k_1 * np.exp(k_2 * _a_gu) if _los else 0
             _d_gu = distance_3d(_gn['voxel'], _c_uav['serv_voxel'])
-            _k_factor, _p_los = k_1 * np.exp(k_2 * _a_gu), 1 / (z_1 * np.exp(-z_2 * (_a_gu - z_1)))
-            _beta = (_p_los * (beta_0 * (_d_gu ** -alpha))) + ((1 - _p_los) * (kappa * beta_0 * (_d_gu ** -alpha_)))
+
+            _beta = beta_0 * (_d_gu ** -alpha) if _los else kappa * beta_0 * (_d_gu ** -alpha_)
 
             _g_sigma = np.sqrt(1 / (2 * (_k_factor + 1)))
             _g_mu = np.sqrt(_k_factor / (2 * (_k_factor + 1)))
 
-            # TO-DO: This difference in '_beta' and '_g' gen might warrant another look...
             [_h_matrix[_a_u].append(np.sqrt(_beta) * complex(np.random.normal(_g_mu, _g_sigma),
                                                              np.random.normal(_g_mu, _g_sigma))) for _ in range(n_a_g)]
 
     return _h_matrix
 
 
-def comm_link(_gn, _uav):
+def comm_link(_gn, _c_uav):
     """
     Render the GN-UAV link in the MU-MIMO paradigm (with ZF receive beam-forming and receiver thermal noise)
     """
-    _h_matrix, _payload_size = _uav['channel'], _gn['traffic']['size']
+    _a_gu = np.clip(rad2deg(angle(_gn['voxel'], _c_uav['serv_voxel'])), 0, 89.9)
+    _p_los = 1 / (z_1 * np.exp(-z_2 * (_a_gu - z_1)))
+
     _w_vector = np.random.multivariate_normal(np.zeros(2), 0.5 * w_var * np.eye(2), size=n_a_u).view(np.complex128)
+    _h_los_matrix, _h_nlos_matrix, _payload_size = _c_uav['los_channel'], _c_uav['nlos_channel'], _gn['traffic']['size']
 
     # noinspection PyUnresolvedReferences
-    _w_hat_vector = np.linalg.pinv(_h_matrix.conj().T @ _h_matrix) @ _h_matrix.conj().T @ _w_vector
+    # ZF beam-forming modification to the LoS noise vector when symbols are perfectly recovered...
+    _w_hat_los_vector = np.linalg.pinv(_h_los_matrix.conj().T @ _h_los_matrix) @ _h_los_matrix.conj().T @ _w_vector
 
-    return _payload_size / (bw * np.log2(1 + (tx_p / ((np.linalg.norm(_w_hat_vector) ** 2) / _w_hat_vector.shape[0]))))
+    # noinspection PyUnresolvedReferences
+    # ZF beam-forming modification to the NLoS noise vector when symbols are perfectly recovered...
+    _w_hat_nlos_vector = np.linalg.pinv(_h_nlos_matrix.conj().T @ _h_nlos_matrix) @ _h_nlos_matrix.conj().T @ _w_vector
+
+    _tgpt_los = bw * np.log2(1 + (tx_p / ((np.linalg.norm(_w_hat_los_vector) ** 2) / _w_hat_los_vector.shape[0])))
+    _tgpt_nlos = bw * np.log2(1 + (tx_p / ((np.linalg.norm(_w_hat_nlos_vector) ** 2) / _w_hat_nlos_vector.shape[0])))
+
+    return _payload_size / ((_p_los * _tgpt_los) + ((1 - _p_los) * _tgpt_nlos))
 
 
 def lcso_initialize(_x_i, _x_f):
@@ -261,7 +273,7 @@ def lcso_initialize(_x_i, _x_f):
     _x_s = np.linspace(0, len(_i_s) - 1, m_sg_post)
 
     _clip_value_min = [x_d, y_d, z_d]
-    _clip_value_max = [x_max - x_d, y_max - y_d, z_max - z_d]
+    _clip_value_max = [x_max - (x_d / 2), y_max - (y_d / 2), z_max - (z_d / 2)]
 
     # TO-DO: Add randomizations to this deterministic initialization...
     return tf.tile(tf.expand_dims(tf.clip_by_value(tf.constant(list(zip(
@@ -271,15 +283,15 @@ def lcso_initialize(_x_i, _x_f):
         clip_value_min=_clip_value_min, clip_value_max=_clip_value_max), axis=0), multiples=[n_sw, 1, 1])
 
 
-def lcso_eval_obj_(_traj_vels, _traj_accs, _traj_vert_vel, _traj_vert_time):
+def lcso_eval_obj_2(_traj_horz_vels, _traj_horz_accs, _traj_vert_vels, _traj_vert_accs):
     """
-    LCSO energy model: Arbitrary horizontal 2D motion + Constant vertical transition
+    LCSO energy model: Aggregating contributions of the separated horz. & vert. components of the 3D mobility vector
     """
-    return (energy_3(_traj_vert_vel.numpy(), _traj_vert_time.numpy()) +
-            energy_2([_ for _ in _traj_vels.numpy()], [_ for _ in _traj_accs.numpy()]))
+    return (energy_2([_ for _ in _traj_horz_vels.numpy()], [_ for _ in _traj_horz_accs.numpy()]) +
+            energy_3([_ for _ in _traj_vert_vels.numpy()], [_ for _ in _traj_vert_accs.numpy()]))
 
 
-def lcso_eval_obj(_traj_wps, _traj_vels, _eval_assign, _eval_obj):
+def lcso_eval_obj_1(_traj_wps, _traj_vels, _eval_assign, _eval_obj):
     """
     LCSO objective: Lagrangian design similar to the HCSO cost function in MAESTRO-X
 
@@ -287,29 +299,38 @@ def lcso_eval_obj(_traj_wps, _traj_vels, _eval_assign, _eval_obj):
     "MAESTRO-X: Distributed Orchestration of Rotary-Wing UAV-Relay Swarms,"
     in IEEE Transactions on Cognitive Communications and Networking, vol. 9, no. 3, pp. 794-810, June 2023.
     """
-    _traj_vels = tf.clip_by_value(_traj_vels, clip_value_min=v_min, clip_value_max=v_max)
+    __traj_hts = tf.roll(_traj_wps, shift=-1, axis=0)[:-1, 2] - _traj_wps[:-1, 2]
+    _traj_hts = tf.where(tf.equal(__traj_hts, 0), tf.ones_like(__traj_hts), __traj_hts)
+    _traj_dists = tf.norm(tf.roll(_traj_wps, shift=-1, axis=0)[:-1, :] - _traj_wps[:-1, :], axis=1)
 
-    _traj_times = tf.divide(tf.norm(tf.roll(_traj_wps, shift=-1, axis=0)[:-1, :2] - _traj_wps[:-1, :2], axis=1),
-                            tf.where(tf.equal(_traj_vels[:-1], 0), tf.ones_like(_traj_vels[:-1]), _traj_vels[:-1]))
+    __traj_vels = tf.clip_by_value(_traj_vels, clip_value_min=v_min, clip_value_max=v_max)
 
-    _traj_accs = tf.clip_by_value(tf.divide(tf.roll(_traj_vels, shift=-1)[:-1] - _traj_vels[:-1],
-                                            tf.where(tf.equal(_traj_times[:-1], 0), tf.ones_like(_traj_times[:-1]),
-                                                     _traj_times[:-1])), clip_value_min=a_min, clip_value_max=a_max)
+    _traj_times = tf.divide(tf.norm(tf.roll(_traj_wps, shift=-1, axis=0)[:-1, :] - _traj_wps[:-1, :], axis=1),
+                            tf.where(tf.equal(__traj_vels[:-1], 0), tf.ones_like(__traj_vels[:-1]), __traj_vels[:-1]))
+
+    _traj_accs = tf.clip_by_value(tf.divide(tf.roll(__traj_vels, shift=-1, axis=0)[:-1] - __traj_vels[:-1],
+                                            tf.where(tf.equal(_traj_times, 0), tf.ones_like(_traj_times),
+                                                     _traj_times)), clip_value_min=a_min, clip_value_max=a_max)
 
     # Enforcing acceleration constraints...
-    for _i in range(_traj_accs.numpy().shape[0]):
-        assign(_traj_vels[_i], (_traj_vels[_i - 1] if _i > 0 else 0) +
-               (_traj_accs[_i] * _traj_times[_i]), validate_shape=True, use_locking=True)
+    for _i in range(1, _traj_accs.numpy().shape[0] + 1):
+        assign(__traj_vels[_i], __traj_vels[_i - 1] + (_traj_accs[_i - 1] *
+                                                       _traj_times[_i - 1]), validate_shape=True, use_locking=True)
 
-    _traj_times = tf.divide(tf.norm(tf.roll(_traj_wps, shift=-1, axis=0)[:-1, :2] - _traj_wps[:-1, :2], axis=1),
-                            tf.where(tf.equal(_traj_vels[:-1], 0), tf.ones_like(_traj_vels[:-1]), _traj_vels[:-1]))
+    _traj_times = tf.divide(tf.norm(tf.roll(_traj_wps, shift=-1, axis=0)[:-1, :] - _traj_wps[:-1, :], axis=1),
+                            tf.where(tf.equal(__traj_vels[:-1], 0), tf.ones_like(__traj_vels[:-1]), __traj_vels[:-1]))
 
-    _traj_time = tf.reduce_sum(_traj_times).numpy()
+    _traj_time = tf.reduce_sum(_traj_times).numpy()  # Total trajectory execution time
 
-    # TO-DO: Using mean(_traj_vels) & _traj_time for vert might need another look...
-    # NOTE: Although the modeling allows arbitrary vertical transitions between highly-interpolated horizontal
-    #       segments, for computational ease, we use a single transition at the end with mean(_traj_vels) & _traj_time.
-    _traj_nrg = lcso_eval_obj_(_traj_vels, _traj_accs, tf.mean(_traj_vels), _traj_time)
+    __traj_accs = tf.pad(_traj_accs, tf.constant([[1, 0]]), 'CONSTANT')
+
+    _traj_angles = tf.math.asin(tf.divide(_traj_dists, _traj_hts))
+    _traj_horz_vels = tf.multiply(__traj_vels, tf.math.cos(_traj_angles))
+    _traj_vert_vels = tf.multiply(__traj_vels, tf.math.sin(_traj_angles))
+    _traj_horz_accs = tf.multiply(__traj_accs, tf.math.cos(_traj_angles))
+    _traj_vert_accs = tf.multiply(__traj_accs, tf.math.sin(_traj_angles))
+
+    _traj_nrg = lcso_eval_obj_2(_traj_horz_vels, _traj_horz_accs, _traj_vert_vels, _traj_vert_accs)
 
     if _eval_assign and _eval_obj is not None:
         assign(_eval_obj, ((1.0 - (nu * pwr_avg)) * _traj_time) +
@@ -327,7 +348,7 @@ def lcso_tournament(_traj_wps_ss, _wp_vels_ss, _traj_vels_ss, _vel_vels_ss, _s_s
     for _i_ss in range(0, _traj_wps_ss.shape[0], 3):
 
         with ThreadPoolExecutor(max_workers=n_w) as _exec:
-            [_exec.submit(lcso_eval_obj, _traj_wps_ss[_t_ss[_i_ss + _j_ss]],
+            [_exec.submit(lcso_eval_obj_1, _traj_wps_ss[_t_ss[_i_ss + _j_ss]],
                           _traj_vels_ss[_t_ss[_i_ss + _j_ss]], _w_save, _evals[
                               (_s_ss * n_ss) + _t_ss[_i_ss + _j_ss]] if (_s_ss > 0) and (_evals is not None) and
                                                                         _w_save else None) for _j_ss in range(3)]
@@ -409,7 +430,7 @@ def lcso_execute(_traj_wps, _wp_vels, _traj_vels, _vel_vels):
             _traj_vels, _r_idxs, axis=0), tf.gather(_vel_vels, _r_idxs, axis=0), -1, None, False, None)
 
     with ThreadPoolExecutor(max_workers=n_w) as _exec:
-        [_exec.submit(lcso_eval_obj, _traj_wps[__i_sw], _traj_vels[__i_sw],
+        [_exec.submit(lcso_eval_obj_1, _traj_wps[__i_sw], _traj_vels[__i_sw],
                       True, _evals[__i_sw]) for __i_sw in range(n_sw)]  # Final computation of lcso_eval_objs...
 
     _i_sw = tf.argmin(_evals)  # Best index
@@ -422,7 +443,10 @@ def lcso_design(_x_i, _x_f):
 
     B. Borowska, “Learning Competitive Swarm Optimization,” Entropy, vol. 24, no. 2, 2022.
     """
-    __traj_wps = lcso_initialize(_x_i, _x_f)  # Way-point particles
+    __x_i = tf.constant([[_x_i['x'], _x_i['y'], _x_i['z']]], dtype=tf.float64)
+    __x_f = tf.constant([[_x_f['x'], _x_f['y'], _x_f['z']]], dtype=tf.float64)
+
+    __traj_wps = lcso_initialize(__x_i, __x_f)  # Way-point particles
     __wp_vels = tf.Variable(tf.ones(shape=[n_sw, m_sg_post, 3]))  # Way-point particle velocities
 
     _vel_range = np.linspace(v_min, v_max, v_num)
@@ -432,7 +456,7 @@ def lcso_design(_x_i, _x_f):
 
     _traj_wps, _traj_vels = lcso_execute(__traj_wps, __wp_vels, __traj_vels, __vel_vels)
 
-    return lcso_eval_obj(_traj_wps, _traj_vels, False, None)
+    return lcso_eval_obj_1(_traj_wps, _traj_vels, False, None)
 
 
 def mtsp_cost_model(_time_costs, _c_uavs, _curr_time, _from_idx, _to_idx):
@@ -558,8 +582,9 @@ print('[INFO] CrossLayerMTSPEvaluations core_operations: Setting up the simulati
 # LCSO Energy boundary conditions
 e_min, e_max = energy_1(v_p_min, t_min), energy_1(v_max, t_max)
 
-# LCSO Lagrangian multiplier
-nu = 0.99 / pwr_avg  # Lagrangian definition similar to HCSO in MAESTRO-X
+# LCSO Lagrangian multiplier | Lagrangian definition similar to HCSO in MAESTRO-X
+# TO-DO: Here, this is derived offline using projected subgradient ascent. However, merge both operations for clarity.
+nu = 0.99 / pwr_avg
 
 h_g = z_d / 2 if h_g is None else h_g  # Heights of the GNs
 h_u = z_max - (z_d / 2)  # Heights of the UAVs optimized via LCSO...
@@ -572,7 +597,7 @@ assert int(energy_1(v_min)) == 1985 and int(energy_1(v_p_min)) == 1734, 'Potenti
 assert sum([_f['n'] for _f in traffic.values()]) == n_g, 'Traffic QoS does not match the script simulation setup!'
 assert n_u < n_c, 'The number of UAVs should be smaller than the number of GN clusters for better perf. comparisons!'
 assert ss_cnt % 3 == 0 and n_sw % ss_cnt == 0 and sum(n_sw_div.values()) == n_sw, 'Incorrect swarm configs for LCSO!'
-assert int(energy_2([v_min], [0])) == 1985 and int(energy_2([v_p_min], [0])) == 1734, 'Error in energy_2 computation!'
+assert int(energy_2([v_min], [0])) == 1985 and int(energy_2([v_p_min], [0])) == 1736, 'Error in energy_2 computation!'
 assert int(energy_3([v_min], [0])) == 1985 and int(energy_3([v_p_min], [0])) == 1586, 'Error in energy_3 computation!'
 assert sum([_sc == n_ss and _sc % 3 == 0 for _sc in n_sw_div.values()]) == ss_cnt, 'Incorrect sub-swarm divs for LCSO!'
 
@@ -604,9 +629,9 @@ print('[INFO] CrossLayerMTSPEvaluations core_operations: Rotary-wing UAV mobilit
 e_vels = np.arange(start=v_min, stop=v_max + v_stp, step=v_stp)
 e_trace = go.Scatter(x=e_vels, y=[energy_1(_e_vel) for _e_vel in e_vels], mode='lines+markers')
 
-e_layout = dict(title='Rotary-Wing UAV 2D Mobility Power Analysis (fixed horz. vel.)',
-                xaxis=dict(title='Horizontal Flying Velocity in m/s (v)', autorange=True),
-                yaxis=dict(title='UAV Power Consumption in W (P)', type='log', autorange=True))
+e_layout = dict(title='Rotary-Wing UAV 2D Mobility Power Analysis (Inertial Trajectories)',
+                xaxis=dict(title='UAV Horizontal Flying Velocity in meters/second', autorange=True),
+                yaxis=dict(title='UAV Mobility Power Consumption in Watts', type='log', autorange=True))
 
 plotly.plotly.plot(dict(data=[e_trace], layout=e_layout))
 
@@ -691,7 +716,8 @@ for c_uav in c_uavs:
 
     for bb_voxel in c_uav['bb_voxels']:
         rewards, serv_times = [], {}
-        h_matrix = cl_mtsp_channel(c_uav, bb_voxel)
+        c_uav['los_channel'] = np.array(cl_mtsp_channel(c_uav, True, bb_voxel), dtype=np.complex128)
+        c_uav['nlos_channel'] = np.array(cl_mtsp_channel(c_uav, False, bb_voxel), dtype=np.complex128)
 
         for gn in c_uav['gns']:  # GNs served by 'c_uav'
             gn_id, gn_traffic = gn['id'], gn['traffic_params']  # ID & Traffic params for 'gn'

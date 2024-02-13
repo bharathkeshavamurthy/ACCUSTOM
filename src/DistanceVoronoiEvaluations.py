@@ -48,6 +48,7 @@ CONFIGURATIONS
 """
 
 # Converters
+deg2rad, rad2deg = lambda _x: _x * (np.pi / 180), lambda _x: _x * (180 / np.pi)
 db_watts, dbm_watts = lambda _x: 10 ** (_x / 10), lambda _x: 10 ** ((_x - 30) / 10)
 watts_db, watts_dbm = lambda _x: 10 * np.log10(_x), lambda _x: 10 * np.log10(_x) + 30
 
@@ -55,9 +56,9 @@ watts_db, watts_dbm = lambda _x: 10 * np.log10(_x), lambda _x: 10 * np.log10(_x)
 # TO-DO Configuration | Core analysis variables: Number of UAVs and Number of GNs
 temp, k_1, k_2, z_1, z_2, alpha, alpha_, kappa, bw = 300, 1, np.log(100) / 90, 9.61, 0.16, 2, 2.8, 0.2, 5e6
 g, wgt_uav, tx_p, beta_0, w_var = constants.g, 80, dbm_watts(23), db_watts(20), constants.Boltzmann * temp * bw
-pi, eps, t_max, x_max, y_max, z_max, x_d, y_d, z_d, h_g, h_u = np.pi, 1e-3, 3000, 5000, 5000, 200, 5, 5, 5, None, None
 r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0302, 8, 0.0157, 5730
-n_u, n_g, n_c, n_a_u, n_a_g, v_min, v_stp, v_max, v_p_min, v_h_max, v_v_max = 6, 36, 6, 16, 4, 0, 0.1, 30, 20.1, 30, 30
+n_u, n_g, n_c, n_a_u, n_a_g, v_min, v_stp, v_max, v_p_min, v_h_max, v_v_max = 6, 36, 6, 16, 4, 0, 0.1, 50, 20.1, 50, 50
+pi, eps, t_max, x_max, y_max, z_max, x_d, y_d, z_d, h_g, h_u = np.pi, 0.1, 3000, 3000, 3000, 150, 10, 10, 10, None, None
 # r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0151, 4, 0.0157, 2865
 
 # Quality-of-Service table for GN traffic upload requests
@@ -104,7 +105,7 @@ def energy_1(_v, _t=1):
 
 def energy_2(_vs, _as):
     """
-    An arbitrary horizontal velocity model for UAV mobility energy consumption (segmented [horz. + vert.] components)
+    An arbitrary horizontal velocity model for UAV mobility energy consumption (separated [horz. + vert.] components)
 
     H. Yan, Y. Chen and S. H. Yang, "New Energy Consumption Model for Rotary-Wing UAV Propulsion,"
     IEEE Wireless Communications Letters, vol. 10, no. 9, pp. 2009-2012, Sept. 2021.
@@ -145,7 +146,7 @@ def energy_2(_vs, _as):
 
 def energy_3(_vs, _as):
     """
-    An arbitrary vertical velocity model for UAV mobility energy consumption (segmented [horz. + vert.] components)
+    An arbitrary vertical velocity model for UAV mobility energy consumption (separated [horz. + vert.] components)
 
     H. Yan, Y. Chen and S. H. Yang, "New Energy Consumption Model for Rotary-Wing UAV Propulsion,"
     IEEE Wireless Communications Letters, vol. 10, no. 9, pp. 2009-2012, Sept. 2021.
@@ -179,17 +180,51 @@ def energy_3(_vs, _as):
     return _term_0 + _term_1
 
 
+def voronoi_channel(_uav, _los):
+    """
+    Voronoi MU-MIMO Cluster-UAV channel generation considering both large- and small-scale fading statistics
+    """
+    _h_matrix = [[] for _ in range(n_a_u)]
+
+    for _a_u in range(n_a_u):
+        for _gn in _uav['gns']:  # GNs served by '_uav'
+            _a_gu = angle(_gn['voxel'], _uav['serv_voxel'])
+            _k_factor = k_1 * np.exp(k_2 * _a_gu) if _los else 0
+            _d_gu = distance_3d(_gn['voxel'], _uav['serv_voxel'])
+
+            _beta = beta_0 * (_d_gu ** -alpha) if _los else kappa * beta_0 * (_d_gu ** -alpha_)
+
+            _g_sigma = np.sqrt(1 / (2 * (_k_factor + 1)))
+            _g_mu = np.sqrt(_k_factor / (2 * (_k_factor + 1)))
+
+            [_h_matrix[_a_u].append(np.sqrt(_beta) * complex(np.random.normal(_g_mu, _g_sigma),
+                                                             np.random.normal(_g_mu, _g_sigma))) for _ in range(n_a_g)]
+
+    return _h_matrix
+
+
 def comm_link(_gn, _uav):
     """
     Render the GN-UAV link in the MU-MIMO paradigm (with ZF receive beam-forming and receiver thermal noise)
     """
-    _h_matrix, _payload_size = _uav['channel'], _gn['traffic']['size']
+    _a_gu = np.clip(rad2deg(angle(_gn['voxel'], _uav['serv_voxel'])), 0, 89.9)
+    _p_los = 1 / (z_1 * np.exp(-z_2 * (_a_gu - z_1)))
+
     _w_vector = np.random.multivariate_normal(np.zeros(2), 0.5 * w_var * np.eye(2), size=n_a_u).view(np.complex128)
+    _h_los_matrix, _h_nlos_matrix, _payload_size = _uav['los_channel'], _uav['nlos_channel'], _gn['traffic']['size']
 
     # noinspection PyUnresolvedReferences
-    _w_hat_vector = np.linalg.pinv(_h_matrix.conj().T @ _h_matrix) @ _h_matrix.conj().T @ _w_vector
+    # ZF beam-forming modification to the LoS noise vector when symbols are perfectly recovered...
+    _w_hat_los_vector = np.linalg.pinv(_h_los_matrix.conj().T @ _h_los_matrix) @ _h_los_matrix.conj().T @ _w_vector
 
-    return _payload_size / (bw * np.log2(1 + (tx_p / ((np.linalg.norm(_w_hat_vector) ** 2) / _w_hat_vector.shape[0]))))
+    # noinspection PyUnresolvedReferences
+    # ZF beam-forming modification to the NLoS noise vector when symbols are perfectly recovered...
+    _w_hat_nlos_vector = np.linalg.pinv(_h_nlos_matrix.conj().T @ _h_nlos_matrix) @ _h_nlos_matrix.conj().T @ _w_vector
+
+    _tgpt_los = bw * np.log2(1 + (tx_p / ((np.linalg.norm(_w_hat_los_vector) ** 2) / _w_hat_los_vector.shape[0])))
+    _tgpt_nlos = bw * np.log2(1 + (tx_p / ((np.linalg.norm(_w_hat_nlos_vector) ** 2) / _w_hat_nlos_vector.shape[0])))
+
+    return _payload_size / ((_p_los * _tgpt_los) + ((1 - _p_los) * _tgpt_nlos))
 
 
 """
@@ -210,7 +245,7 @@ assert sum([_f['n'] for _f in traffic.values()]) == n_g, 'Traffic QoS does not m
 assert int(energy_1(v_min)) == 1985 and int(energy_1(v_p_min)) == 1734, 'Potential error in energy_1 computation!'
 assert n_c == n_u, 'The number of UAVs should be equal to the number of GN clusters for this static UAV deployment!'
 assert h_u % (z_d / 2) == 0 and h_g % (z_d / 2) == 0, 'Height values do not adhere to the current grid tessellation!'
-assert int(energy_2([v_min], [0])) == 1985 and int(energy_2([v_p_min], [0])) == 1734, 'Error in energy_2 computation!'
+assert int(energy_2([v_min], [0])) == 1985 and int(energy_2([v_p_min], [0])) == 1736, 'Error in energy_2 computation!'
 assert int(energy_3([v_min], [0])) == 1985 and int(energy_3([v_p_min], [0])) == 1586, 'Error in energy_3 computation!'
 
 # Deployment model parameters
@@ -241,9 +276,9 @@ print('[INFO] DistanceVoronoiEvaluations core_operations: Rotary-wing UAV mobili
 e_vels = np.arange(start=v_min, stop=v_max + v_stp, step=v_stp)
 e_trace = go.Scatter(x=e_vels, y=[energy_1(_e_vel) for _e_vel in e_vels], mode='lines+markers')
 
-e_layout = dict(title='Rotary-Wing UAV 2D Mobility Power Analysis (fixed horz. vel.)',
-                xaxis=dict(title='Horizontal Flying Velocity in m/s (v)', autorange=True),
-                yaxis=dict(title='UAV Power Consumption in W (P)', type='log', autorange=True))
+e_layout = dict(title='Rotary-Wing UAV 2D Mobility Power Analysis (Inertial Trajectories)',
+                xaxis=dict(title='UAV Horizontal Flying Velocity in meters/second', autorange=True),
+                yaxis=dict(title='UAV Mobility Power Consumption in Watts', type='log', autorange=True))
 
 plotly.plotly.plot(dict(data=[e_trace], layout=e_layout))
 
@@ -306,26 +341,11 @@ for uav in uavs:  # Update 'serv_voxel' ids to maintain DTO consistency...
     voxel_x, voxel_y, voxel_z = uav['serv_voxel']['x'], uav['serv_voxel']['y'], uav['serv_voxel']['z']
     uav['serv_voxel']['id'] = int((voxel_x / x_d) - 0.5) + int((voxel_y / y_d) - 0.5) + int((voxel_z / z_d) - 0.5)
 
-''' MU-MIMO Channel Generation '''
+''' MU-MIMO Channel Generation (Probabilistic LoS-NLoS) '''
 
 for uav in uavs:
-    h_matrix = [[] for _ in range(n_a_u)]
-
-    for a_u in range(n_a_u):
-        for gn in uav['gns']:  # GNs served by 'uav'
-            a_gu = angle(gn['voxel'], uav['serv_voxel'])
-            d_gu = distance_3d(gn['voxel'], uav['serv_voxel'])
-            k_factor, p_los = k_1 * np.exp(k_2 * a_gu), 1 / (z_1 * np.exp(-z_2 * (a_gu - z_1)))
-            beta = (p_los * (beta_0 * (d_gu ** -alpha))) + ((1 - p_los) * (kappa * beta_0 * (d_gu ** -alpha_)))
-
-            g_sigma = np.sqrt(1 / (2 * (k_factor + 1)))
-            g_mu = np.sqrt(k_factor / (2 * (k_factor + 1)))
-
-            # TO-DO: This difference in 'beta' and 'g' gen might warrant another look...
-            [h_matrix[a_u].append(np.sqrt(beta) * complex(np.random.normal(g_mu, g_sigma),
-                                                          np.random.normal(g_mu, g_sigma))) for _ in range(n_a_g)]
-
-    uav['channel'] = np.array(h_matrix, dtype=np.complex128)
+    uav['los_channel'] = np.array(voronoi_channel(uav, True), dtype=np.complex128)
+    uav['nlos_channel'] = np.array(voronoi_channel(uav, False), dtype=np.complex128)
 
 '''
 COLLISION AVOIDANCE:
