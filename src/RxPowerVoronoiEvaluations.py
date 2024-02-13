@@ -1,5 +1,5 @@
 """
-This script encapsulates the operations involved in evaluating the performance of the Iterative Rx signal power
+This script encapsulates the operations involved in evaluating the performance of the Iterative Rx Signal Power
 based Voronoi Decomposition algorithm from Morocho-Cayamcela et al., 2021. These evaluations are conducted from the
 perspective of our ACCUSTOM framework, i.e., employing the same modeling as that used in our ACCUSTOM solution approach.
 
@@ -41,7 +41,7 @@ SCRIPT SETUP
 np.random.seed(1337)
 
 # Plotly API access credentials
-plotly.tools.set_credentials_file(username='total.academe', api_key='XQAdsDUeESbbgI0Pyw3E')
+plotly.tools.set_credentials_file(username='<insert_username_here>', api_key='<insert_api_key_here>')
 
 """
 CONFIGURATIONS
@@ -267,10 +267,10 @@ assert x_max % x_d == 0 and y_max % y_d == 0 and z_max % z_d == 0, 'Potential er
 assert h_u != 0 and h_g != 0 and 0 < h_u < z_max and 0 < h_g < z_max, 'Unsupported or Impractical height values!'
 assert sum([_f['n'] for _f in traffic.values()]) == n_g, 'Traffic QoS does not match the script simulation setup!'
 assert int(energy_1(v_min)) == 1985 and int(energy_1(v_p_min)) == 1714, 'Potential error in energy_1 computation!'
-assert n_c == n_u, 'The number of UAVs should be equal to the number of GN clusters for this static UAV deployment!'
 assert h_u % (z_d / 2) == 0 and h_g % (z_d / 2) == 0, 'Height values do not adhere to the current grid tessellation!'
 assert int(energy_2([v_min], [0])) == 1985 and int(energy_2([v_p_min], [0])) == 1716, 'Error in energy_2 computation!'
 assert int(energy_3([v_min], [0])) == 1985 and int(energy_3([v_p_min], [0])) == 1628, 'Error in energy_3 computation!'
+assert n_c == n_u, 'The number of UAVs should be equal to the number of GN clusters for the Rx pwr. Voronoi deployment!'
 
 # Deployment model parameters
 print('[INFO] RxPowerVoronoiEvaluations core_operations: Deployment model parameters in this simulation are - '
@@ -367,7 +367,6 @@ while sum([abs(curr_objs[_gn] - prev_objs[_gn]) <= eps for _gn in range(n_g)]) <
                                                         _g_u['voxel']['z']] for _g_u in uav['gns']]), axis=0)]
 
             uav['serv_voxel'] = {'x': serv_voxel[0], 'y': serv_voxel[1], 'z': h_u}
-            # uav['serv_voxel'] = {'x': serv_voxel[0], 'y': serv_voxel[1], 'z': serv_voxel[2]}
 
 for uav in uavs:  # Update 'serv_voxel' ids to maintain DTO consistency...
     voxel_x, voxel_y, voxel_z = uav['serv_voxel']['x'], uav['serv_voxel']['y'], uav['serv_voxel']['z']
@@ -386,8 +385,8 @@ In ACCUSTOM, enforcing collision avoidance in an offline centralized setting is 
 scheduling/association that is to-be-determined by mTSP. So, we assume that the UAVs are equipped with LIDARs and 
 other sensing mechanisms (along with UAV-UAV control communication) to avoid collisions with each other (and obstacles).
 
-So, here in the Rx pwr. Voronoi framework, to maintain consistency across comparisons, if a UAV nears a collision 
-during its 'as-the-crow-flies' movement, it moves to the nearest 'collision-free' voxel.
+So, here in this Rx pwr. Voronoi framework, to maintain consistency across comparisons, if a UAV nears a collision 
+during its adaptive/iterative Voronoi algorithmic movement, it moves to the nearest 'collision-free' voxel.
 '''
 
 ''' Service & Reward Computation '''
@@ -395,9 +394,11 @@ during its 'as-the-crow-flies' movement, it moves to the nearest 'collision-free
 for uav in uavs:
     rewards, serv_times = [], []
 
-    uav['trans_nrg'] = ((2 * energy_3(v_v_max, h_u / v_v_max)) +
-                        (2 * energy_1(v_h_max, distance_3d(uav['start_voxel'], uav['serv_voxel']) / v_h_max)))
-    uav['trans_time'] = 2 * ((distance_3d(uav['start_voxel'], uav['serv_voxel']) / v_h_max) + (h_u / v_v_max))
+    uav['trans_time'] = ((2 * (h_u / v_v_max)) +
+                         (2 * (distance_3d(uav['start_voxel'], uav['serv_voxel']) / v_h_max)))
+
+    uav['trans_nrg'] = ((2 * energy_3([v_v_max], [0]) * (h_u / v_v_max)) +
+                        (2 * energy_2([v_h_max], [0]) * (distance_3d(uav['start_voxel'], uav['serv_voxel']) / v_h_max)))
 
     avail_serv_time = t_max - uav['trans_time']
     assert avail_serv_time > max([_f['latency'] for _f in traffic.values()]), 'Not enough available service time!'
@@ -419,8 +420,8 @@ for uav in uavs:
         uav['cumul_reward'] += rewards[-1]
 
     uav['serv_time'] = max(serv_times)
+    uav['serv_nrg'] = energy_1(0, uav['serv_time'])
     uav['end_time'] = uav['trans_time'] + uav['serv_time']
-    uav['serv_nrg'] = uav['serv_time'] * energy_1(0, uav['serv_time'])  # Hover at cluster-position
 
 # Report metrics
 print('[INFO] RxPowerVoronoiEvaluations core_operations: Avg. UAV Pwr. Consumption = {} W | Fleet Reward = {}!'.format(

@@ -336,7 +336,6 @@ while sum([abs(curr_objs[_gn] - prev_objs[_gn]) <= eps for _gn in range(n_g)]) <
                                                         _g_u['voxel']['z']] for _g_u in uav['gns']]), axis=0)]
 
             uav['serv_voxel'] = {'x': serv_voxel[0], 'y': serv_voxel[1], 'z': h_u}
-            # uav['serv_voxel'] = {'x': serv_voxel[0], 'y': serv_voxel[1], 'z': serv_voxel[2]}
 
 for uav in uavs:  # Update 'serv_voxel' ids to maintain DTO consistency...
     voxel_x, voxel_y, voxel_z = uav['serv_voxel']['x'], uav['serv_voxel']['y'], uav['serv_voxel']['z']
