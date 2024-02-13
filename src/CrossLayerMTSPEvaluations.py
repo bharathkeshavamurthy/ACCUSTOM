@@ -300,8 +300,9 @@ def lcso_eval_obj_1(_traj_wps, _traj_vels, _eval_assign, _eval_obj):
     "MAESTRO-X: Distributed Orchestration of Rotary-Wing UAV-Relay Swarms,"
     in IEEE Transactions on Cognitive Communications and Networking, vol. 9, no. 3, pp. 794-810, June 2023.
     """
-    __traj_hts = tf.roll(_traj_wps, shift=-1, axis=0)[:-1, 2] - _traj_wps[:-1, 2]
+    __traj_hts = tf.abs(tf.roll(_traj_wps, shift=-1, axis=0)[:-1, 2] - _traj_wps[:-1, 2])
     _traj_hts = tf.where(tf.equal(__traj_hts, 0), tf.ones_like(__traj_hts), __traj_hts)
+
     _traj_dists = tf.norm(tf.roll(_traj_wps, shift=-1, axis=0)[:-1, :] - _traj_wps[:-1, :], axis=1)
 
     __traj_vels = tf.clip_by_value(_traj_vels, clip_value_min=v_min, clip_value_max=v_max)

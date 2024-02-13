@@ -26,7 +26,7 @@ SCRIPT SETUP
 np.random.seed(1337)
 
 # Plotly API access credentials
-plotly.tools.set_credentials_file(username='total.academe', api_key='j4WN9QhwOwurkwT0S8VB')
+plotly.tools.set_credentials_file(username='<insert_username_here>', api_key='<insert_api_key_here>')
 
 """
 CONFIGURATIONS
