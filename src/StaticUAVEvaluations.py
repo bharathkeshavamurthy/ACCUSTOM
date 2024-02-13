@@ -35,7 +35,7 @@ SCRIPT SETUP
 np.random.seed(1337)
 
 # Plotly API access credentials
-plotly.tools.set_credentials_file(username='total.academe', api_key='XQAdsDUeESbbgI0Pyw3E')
+plotly.tools.set_credentials_file(username='<insert_username_here>', api_key='<insert_api_key_here>')
 
 """
 CONFIGURATIONS
@@ -306,12 +306,12 @@ clusters = [{'id': _i, 'centroid': [gns[_j]['voxel']['x'], gns[_j]['voxel']['y']
              'obs_s': [gns[_j]]} for _i, _j in enumerate(np.random.choice(n_g, size=n_c))]
 
 # Cluster convergence check routine
-cluster_converge = lambda _n_c, _obs_s: sum([_obs['prev_cluster'] == _obs['curr_cluster'] for _obs in _obs_s]) == _n_c
+cluster_converge = lambda _n_g, _obs_s: sum([_obs['prev_cluster'] == _obs['curr_cluster'] for _obs in _obs_s]) == _n_g
 
 obs_s = gns
 
 # Until cluster assignments change...
-while not cluster_converge(n_c, obs_s):
+while not cluster_converge(n_g, obs_s):
     [_cluster['obs_s'].clear() for _cluster in clusters]
 
     # E-step (Assign)
@@ -332,7 +332,7 @@ while not cluster_converge(n_c, obs_s):
             cluster['centroid'] = [_ for _ in np.mean(np.array([
                 [_obs['voxel']['x'], _obs['voxel']['y'], _obs['voxel']['z']] for _obs in cluster['obs_s']]), axis=0)]
 
-''' Stationary UAV Deployment '''
+''' Static UAV Deployment '''
 
 # UAV instances
 uavs = [{'id': _cluster['id'], 'cumul_reward': 0, 'serv_nrg': 0, 'trans_nrg': 0,
@@ -357,7 +357,7 @@ In ACCUSTOM, enforcing collision avoidance in an offline centralized setting is 
 scheduling/association that is to-be-determined by mTSP. So, we assume that the UAVs are equipped with LIDARs and 
 other sensing mechanisms (along with UAV-UAV control communication) to avoid collisions with each other (and obstacles).
 
-So, here in this stationary deployment, to maintain consistency across comparisons, if a UAV nears a collision 
+So, here in this static UAV deployment, to maintain consistency across comparisons, if a UAV nears a collision 
 during its 'as-the-crow-flies' movement, it moves to the nearest 'collision-free' voxel.
 '''
 
@@ -366,9 +366,11 @@ during its 'as-the-crow-flies' movement, it moves to the nearest 'collision-free
 for uav in uavs:
     rewards, serv_times = [], []
 
-    uav['trans_nrg'] = ((2 * energy_3(v_v_max, h_u / v_v_max)) +
-                        (2 * energy_1(v_h_max, distance_3d(uav['start_voxel'], uav['serv_voxel']) / v_h_max)))
-    uav['trans_time'] = 2 * ((distance_3d(uav['start_voxel'], uav['serv_voxel']) / v_h_max) + (h_u / v_v_max))
+    uav['trans_time'] = ((2 * (h_u / v_v_max)) +
+                         (2 * (distance_3d(uav['start_voxel'], uav['serv_voxel']) / v_h_max)))
+
+    uav['trans_nrg'] = ((2 * energy_3([v_v_max], [0]) * (h_u / v_v_max)) +
+                        (2 * energy_2([v_h_max], [0]) * (distance_3d(uav['start_voxel'], uav['serv_voxel']) / v_h_max)))
 
     avail_serv_time = t_max - uav['trans_time']
     assert avail_serv_time > max([_f['latency'] for _f in traffic.values()]), 'Not enough available service time!'
@@ -390,8 +392,8 @@ for uav in uavs:
         uav['cumul_reward'] += rewards[-1]
 
     uav['serv_time'] = max(serv_times)
+    uav['serv_nrg'] = energy_1(0, uav['serv_time'])
     uav['end_time'] = uav['trans_time'] + uav['serv_time']
-    uav['serv_nrg'] = uav['serv_time'] * energy_1(0, uav['serv_time'])  # Hover at position
 
 # Report metrics
 print('[INFO] StaticUAVEvaluations core_operations: Average UAV Power Consumption = {} W | Fleet Reward = {}!'.format(
