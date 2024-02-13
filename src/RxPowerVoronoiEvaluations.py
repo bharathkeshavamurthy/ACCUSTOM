@@ -386,7 +386,7 @@ scheduling/association that is to-be-determined by mTSP. So, we assume that the 
 other sensing mechanisms (along with UAV-UAV control communication) to avoid collisions with each other (and obstacles).
 
 So, here in this Rx pwr. Voronoi framework, to maintain consistency across comparisons, if a UAV nears a collision 
-during its adaptive/iterative Voronoi algorithmic movement, it moves to the nearest 'collision-free' voxel.
+during its adaptive Voronoi motion OR its 'as-the-crow-flies' motion, it moves to the nearest 'collision-free' voxel.
 '''
 
 ''' Service & Reward Computation '''
