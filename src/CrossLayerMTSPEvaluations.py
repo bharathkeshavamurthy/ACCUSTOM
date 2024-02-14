@@ -1,5 +1,5 @@
 """
-This script encapsulates the operations involved in evaluating the performance of our proposed cross-layer optimization
+This script encapsulates the operations involved in evaluating the performance of our proposed Cross-Layer Optimization
 solution (ZF + mTSP + LCSO) for harvesting prioritized traffic from MIMO-capable Ground Nodes (GNs) via MIMO UAVs.
 
 REFERENCES:
@@ -20,7 +20,7 @@ DEPLOYMENT MECHANISM:
     c. Coarse-Search: A Bounding-Box (BB) method to obtain the set of candidate voxels for the subsequent fine-search;
     d. Fine-Search: A Zero-Forcing (ZF) MU-MIMO beam-forming construction determines channel capacities and latencies;
     e. A Learning Competitive Swarm Optimization (LCSO) algorithm to design the 3D trajectories between these positions;
-    f. A Multiple Traveling Salesman Problem (mTSP) setup to graphically obtain the GN association/scheduling mechanism.
+    f. A multiple Traveling Salesman Problem (mTSP) setup to graphically obtain the GN association/scheduling mechanism.
 
 REPORTED METRICS:
     a. Total Cumulative Fleet-wide Reward (vs configurable Number of UAVs);
@@ -65,7 +65,7 @@ SCRIPT SETUP
 np.random.seed(1337)
 
 # Plotly API access credentials
-plotly.tools.set_credentials_file(username='total.academe', api_key='XQAdsDUeESbbgI0Pyw3E')
+plotly.tools.set_credentials_file(username='<insert_username_here>', api_key='<insert_api_key_here>')
 
 """
 CONFIGURATIONS
@@ -470,7 +470,6 @@ def mtsp_cost_model(_time_costs, _c_uavs, _curr_time, _from_idx, _to_idx):
     if _to_idx != 0:
         _gns = _c_uavs[_to_idx - 1]['gns']
 
-        _cost = 0
         for _gn in _gns:
             _gn_id, _gn_traffic = _gn['id'], _gn['traffic_params']  # ID & Traffic params for '_gn'
             _f_pr, _f_lt, _f_df = _gn_traffic['priority'], _gn_traffic['latency'], _gn_traffic['discount_factor']
@@ -532,7 +531,6 @@ def mtsp_solve(_nrg_costs, _time_costs, _c_uavs, _cost_callback):
         """
         mTSP cost (transit optimization variable) model: Arc cost '_from_idx' --> '_to_idx'
         """
-        # time_dim = route_model.GetDimensionOrDie('time')
         return _data_model['cost_callback'](_time_costs, _c_uavs, _time.CumulVar(_from_idx), _from_idx, _to_idx)
 
     _transit_callback_idx = _route_model.RegisterTransitCallback(transit_callback)
@@ -553,9 +551,6 @@ def mtsp_solve(_nrg_costs, _time_costs, _c_uavs, _cost_callback):
     _cumul_nrgs, _cumul_times, _cumul_rewards = {}, {}, {}
 
     if _solution:
-        # nrg_dim = route_model.GetDimensionOrDie('nrg')
-        # time_dim = route_model.GetDimensionOrDie('time')
-        # cost_dim = route_model.GetDimensionOrDie('cost')
 
         for _uav_idx in range(_data_model['num_uavs']):
             _idx = _route_model.Start(_uav_idx)
@@ -581,7 +576,7 @@ CORE OPERATIONS
 # Simulation begins...
 print('[INFO] CrossLayerMTSPEvaluations core_operations: Setting up the simulation for our cross-layer mTSP solution!')
 
-# LCSO Energy boundary conditions
+# LCSO energy boundary conditions
 e_min, e_max = energy_1(v_p_min, t_min), energy_1(v_max, t_max)
 
 # LCSO Lagrangian multiplier | Lagrangian definition similar to HCSO in MAESTRO-X
@@ -661,17 +656,17 @@ gns = np.array(gns_).flatten()
 
 ''' K-Means Clustering for the GNs '''
 
-# Forgy initialization (ID-0 is the depot node)
-clusters = [{'id': _i + 1, 'centroid': [gns[_j]['voxel']['x'], gns[_j]['voxel']['y'], gns[_j]['voxel']['z']],
+# Forgy initialization
+clusters = [{'id': _i, 'centroid': [gns[_j]['voxel']['x'], gns[_j]['voxel']['y'], gns[_j]['voxel']['z']],
              'obs_s': [gns[_j]]} for _i, _j in enumerate(np.random.choice(n_g, size=n_c))]
 
 # Cluster convergence check routine
-cluster_converge = lambda _n_c, _obs_s: sum([_obs['prev_cluster'] == _obs['curr_cluster'] for _obs in _obs_s]) == _n_c
+cluster_converge = lambda _n_g, _obs_s: sum([_obs['prev_cluster'] == _obs['curr_cluster'] for _obs in _obs_s]) == _n_g
 
 obs_s = gns
 
 # Until cluster assignments change...
-while not cluster_converge(n_c, obs_s):
+while not cluster_converge(n_g, obs_s):
     [_cluster['obs_s'].clear() for _cluster in clusters]
 
     # E-step (Assign)
@@ -737,7 +732,7 @@ for c_uav in c_uavs:
     c_uav['serv_voxel'] = best_item[0]  # Service voxel by fine-search
     c_uav['serv_times'] = best_item[1]  # Service times for each GN at 'serv_voxel'
     c_uav['cumul_reward'] = best_item[3]  # Temporary reward (without transition time)
-    c_uav['serv_nrg'] = c_uav['serv_time'] * energy_1(0, c_uav['serv_time'])  # Hover at position
+    c_uav['serv_nrg'] = energy_1(0, c_uav['serv_time'])  # Hover at position to serve the GNs
 
 # Upon clustering & positioning, add the depot node (ID-0)
 c_uavs.append({'id': 0, 'cumul_reward': 0, 'serv_voxel': voxels[0],
