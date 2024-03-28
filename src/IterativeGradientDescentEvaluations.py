@@ -60,7 +60,7 @@ g, n_u, n_g, n_c, n_a_u, n_a_g, wgt_uav, v_h_max, v_v_max = constants.g, 6, 36, 
 temp, k_1, k_2, z_1, z_2, alpha, alpha_, kappa, bw = 300, 1, np.log(100) / 90, 9.61, 0.16, 2, 2.8, 0.2, 5e6
 t_max, x_max, y_max, z_max, x_d, y_d, z_d, h_g, h_u, v_stp = 3000, 3000, 3000, 150, 10, 10, 10, None, None, 0.1
 r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0302, 8, 0.0157, 5730
-v_min, v_max, v_p_min, tx_p, beta_0, w_var = 0, 50, 16.8, dbm_watts(23), db_watts(20), constants.Boltzmann * temp * bw
+v_min, v_max, v_p_min, tx_p, beta_0, w_var = 0, 50, 16.8, dbm_watts(23), db_watts(40), constants.Boltzmann * temp * bw
 # r_tw, delta, rho, rtr_rad, inc_corr, fp_area, n_bld, bld_len, rpm = 1, 0.012, 1.225, 0.4, 0.1, 0.0151, 4, 0.0157, 2865
 
 # Quality-of-Service table for GN traffic upload requests
